@@ -16,6 +16,9 @@ const (
     ENDPOINT_AVAILABLE_GAMES    = "AvailableGames"
     ENDPOINT_JOIN_GAME          = "JoinGame"
     ENDPOINT_LEAVE_GAME         = "LeaveGame"
+    ENDPOINT_TEST_GAME_STATE    = "TestGameState"
+    ENDPOINT_PLAY_CARD          = "TestPlayCard"
+
 )
 
 type Server struct {
@@ -23,6 +26,7 @@ type Server struct {
 
     db          Database
     WSHandler   websocket.Server
+    Games       map[uint32]*Game
 }
 
 type OKMessage struct {
@@ -40,25 +44,44 @@ func WriteResponse(w http.ResponseWriter, status int, v interface{}) {
 func (srv *Server) HandleWS(ws *websocket.Conn) {
     id := strings.TrimPrefix(ws.Config().Location.Path, "/")
     log.Println("websocket: ", id)
-    websocket.JSON.Send(ws, OKMessage{
-        OK: true,
-        Message: "Websocket Test",
-    })
 
     killChan := make(chan bool, 1)
     listenChan := make(chan GameState, 1)
 
     var msg struct {
-        Id string `json:"id"`
-        End bool `json:"end"`
+        GameId      uint32
+        PlayerId    uint32
+        PlayerAuth  uint32 
+        CardId      uint32 
+        End         bool
     }
 
     go func() {
+        connected := false
         for {
             if err := websocket.JSON.Receive(ws, &msg); err != nil {
                 break
             }
+
             log.Println(msg)
+            authentic, err := srv.db.AuthenticatePlayer(msg.PlayerId, msg.PlayerAuth)
+            log.Println("Autheticated")
+            if err == nil && authentic {
+                if !connected {
+                    srv.Games[msg.GameId].PlayerConnect(msg.PlayerId, listenChan)
+                    connected = true
+                    log.Println("Connected")
+                }
+
+                currentJudge, _ := srv.db.CurrentJudge(msg.GameId)
+                log.Println("Found Judge")
+                if msg.PlayerId == currentJudge {
+                    srv.Games[msg.GameId].PickWinningCard(&srv.db, msg.CardId)
+                } else {
+                    srv.Games[msg.GameId].PlayCard(&srv.db, msg.PlayerId, msg.CardId)
+                    log.Println("PlayedCard")
+                }
+            }
         }
         log.Println("recieve break")
         killChan <- true
@@ -94,15 +117,19 @@ func (srv *Server) HandleGET(w http.ResponseWriter, rq *http.Request) {
 
     switch id {
         case ENDPOINT_PLAYER_INFO:
-            HandlePlayerInfoRequest(w, rq)
+            srv.HandlePlayerInfoRequest(w, rq)
         case ENDPOINT_CREATE_GAME:
-            HandleCreateGameRequest(w, rq)
+            srv.HandleCreateGameRequest(w, rq)
         case ENDPOINT_AVAILABLE_GAMES:
-            HandleAvailableGamesRequest(w, rq)
+            srv.HandleAvailableGamesRequest(w, rq)
         case ENDPOINT_JOIN_GAME:
-            HandleJoinGameRequest(w, rq, &srv.db)
+            srv.HandleJoinGameRequest(w, rq)
         case ENDPOINT_LEAVE_GAME:
-            HandleLeaveGameRequest(w, rq)
+            srv.HandleLeaveGameRequest(w, rq)
+        case ENDPOINT_TEST_GAME_STATE:
+            srv.HandleTestGameState(w, rq)
+        case ENDPOINT_PLAY_CARD:
+            srv.HandleTestPlayCard(w, rq)
         case ENDPOINT_GAME_STATE:
             srv.WSHandler.ServeHTTP(w, rq)
         default:
@@ -129,11 +156,21 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
     }
 }
 
+func (srv *Server) InitGames() {
+    games, _ := srv.db.GetGames()
+
+    srv.Games = make(map[uint32]*Game)
+    for index := range games {
+        srv.Games[games[index].ID] = games[index]
+    }
+}
+
 func (srv *Server) RunServer() error {
 
     srv.db.Init()
     defer srv.db.Deinit()
 
+    srv.InitGames()
     srv.WSHandler = websocket.Server{Handler: func(ws *websocket.Conn) {
         srv.HandleWS(ws)
     }, Handshake: nil}

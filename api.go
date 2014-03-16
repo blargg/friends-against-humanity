@@ -5,10 +5,6 @@ import (
     "log"
 )
 
-type GameStateMessage struct {
-    State GameState 
-}
-
 type PlayerInfoMessage struct {
     PlayerId        uint32
     PlayerAuthId    uint32
@@ -36,7 +32,7 @@ type LeaveGameMessage struct {
     Success bool
 }
 
-func HandlePlayerInfoRequest(writer http.ResponseWriter, request *http.Request) {
+func (srv *Server) HandlePlayerInfoRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, PlayerInfoMessage {
         PlayerId        : 117,
         PlayerAuthId    : 711,
@@ -44,13 +40,13 @@ func HandlePlayerInfoRequest(writer http.ResponseWriter, request *http.Request) 
     })
 }
 
-func HandleCreateGameRequest(writer http.ResponseWriter, request *http.Request) {
+func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, CreateGameMessage {
         GameId  : 117,
     })    
 }
 
-func HandleAvailableGamesRequest(writer http.ResponseWriter, request *http.Request) {
+func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, AvailableGamesMessage{
         Games : []GameInfo{
            GameInfo {
@@ -69,18 +65,40 @@ func HandleAvailableGamesRequest(writer http.ResponseWriter, request *http.Reque
     })
 }
 
-func HandleJoinGameRequest(writer http.ResponseWriter, request *http.Request, db *Database) {
-    state, err := db.GameStateForPlayer(1, 1)
+func (srv *Server) HandleJoinGameRequest(writer http.ResponseWriter, request *http.Request) {
+    state, err := srv.db.GameStateForPlayer(1, 1)
     if err != nil {
         log.Fatal(err)
     }
-    WriteResponse(writer, 200, GameStateMessage{
-        State : state,
-    })    
+    WriteResponse(writer, 200, state)    
 }
 
-func HandleLeaveGameRequest(writer http.ResponseWriter, request *http.Request) {
+func (srv *Server) HandleLeaveGameRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, LeaveGameMessage{
         Success : true,
     })      
+}
+
+func (srv *Server) HandleTestGameState(writer http.ResponseWriter, request *http.Request) {
+    state, err := srv.db.GameStateForPlayer(1, 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+    WriteResponse(writer, 200, state)
+}
+
+func (srv *Server) HandleTestPlayCard(writer http.ResponseWriter, request *http.Request) {
+    err := srv.db.PlayCard(1, 1, 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+    err = srv.db.DrawCard(1, 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+    state, err := srv.db.GameStateForPlayer(1, 1)
+    if err != nil {
+        log.Fatal(err)
+    }
+    WriteResponse(writer, 200, state)
 }

@@ -21,6 +21,10 @@ type Database struct {
     NewRoundQuery       *sql.Stmt
     DrawWhiteCardQuery  *sql.Stmt
     DrawBlackCardQuery  *sql.Stmt
+    AuthenticationQuery *sql.Stmt
+    JudgeQuery          *sql.Stmt
+    CardPlayedByQuery   *sql.Stmt
+    GamesQuery          *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -36,11 +40,11 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.PlayerCountQuery, err = db.DB.Prepare("SELECT COUNT(PlayerID) AS PlayerCount FROM PlayersInGame WHERE GameID = ?")
+    db.PlayerCountQuery, err = db.DB.Prepare("SELECT PlayerCount FROM PlayerCount WHERE GameID = ?")
     if err != nil {
         log.Fatal(err)
     }
-    db.PlayerHandQuery, err = db.DB.Prepare("SELECT CardID, Value FROM PlayerHand WHERE PlayerID = ? AND GameID = ?")
+    db.PlayerHandQuery, err = db.DB.Prepare("SELECT CardID, Value FROM PlayerHand WHERE PlayerID = ? AND GameID = ? AND RoundPlayed = 0")
     if err != nil {
         log.Fatal(err)
     }
@@ -80,6 +84,22 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.AuthenticationQuery, err = db.DB.Prepare("SELECT AuthToken FROM Player WHERE ID = ? AND AuthToken = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.JudgeQuery, err = db.DB.Prepare("SELECT PlayerID FROM CurrentJudge WHERE GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.CardPlayedByQuery, err = db.DB.Prepare("SELECT PlayerID FROM CardInHand WHERE GameID = ? AND CardID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.GamesQuery, err = db.DB.Prepare("SELECT ID FROM Game")
+    if err != nil {
+        log.Fatal(err)
+    }
 }   
 
 func (db * Database) Deinit() {
@@ -110,6 +130,7 @@ func (db *Database) WhiteCardForID(cardID uint32) (WhiteCard, error) {
 
 func (db *Database) PlayCard(cardID uint32, gameID uint32, playerID uint32) error {
     state, err := db.GameStateNoPlayer(gameID)
+    log.Println("%d playing %d on round %d in game %d", playerID, cardID, state.RoundNumber, gameID)
     _, err = db.PlayCardQuery.Query(state.RoundNumber, cardID, playerID, gameID)
     return err
 }
@@ -171,31 +192,9 @@ func (db *Database) DrawWhiteCard(gameID uint32) (uint32, error) {
     return cardID, nil
 }
 
-func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
-
-    var state GameState
-    var cardID uint32
-    err := db.GameStateQuery.QueryRow(gameID).Scan(&state.GameId, &state.RoundNumber, &cardID)
-    if err != nil {
-        return GameState{}, err
-    }
-
-    state.CurrentCard, err = db.BlackCardForID(cardID)
-    if err != nil {
-        return GameState{}, err
-    }
-
-    state.PlayerCount, err = db.PlayerCount(gameID)
-    if err != nil {
-        return GameState{}, err
-    }
-
-    return state, nil
-}
-
 func (db *Database) PlayerCount(gameID uint32) (uint32, error) {
     var count uint32
-    err := db.PlayerCountQuery.QueryRow(gameID).Scan(count)
+    err := db.PlayerCountQuery.QueryRow(gameID).Scan(&count)
     return count, err
 }
 
@@ -215,6 +214,66 @@ func (db *Database) Players(gameID uint32) ([]uint32, error) {
     return playerIDs, err
 }
 
+func (db *Database) AuthenticatePlayer(playerID uint32, playerAuth uint32) (bool, error) {
+    var auth uint32
+    err := db.AuthenticationQuery.QueryRow(playerID, playerAuth).Scan(&auth)
+    if err == sql.ErrNoRows {
+        return false, nil
+    }
+    if err != nil {
+        return false, err
+    }
+
+    return true, nil
+}
+
+func (db *Database) CurrentJudge(gameID uint32) (uint32, error) {
+    var judgeID uint32
+    err := db.JudgeQuery.QueryRow(gameID).Scan(&judgeID)
+    if err != nil {
+        return 0, err
+    }
+
+    return judgeID, nil
+}
+
+func (db *Database) CardPlayedBy(gameID uint32, cardID uint32) (uint32, error) {
+    var playerID uint32
+    err := db.CardPlayedByQuery.QueryRow(gameID, cardID).Scan(&playerID)
+    if err != nil {
+        return 0, err
+    }
+
+    return playerID, nil
+}
+
+func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
+
+    var state GameState
+    var cardID uint32
+    err := db.GameStateQuery.QueryRow(gameID).Scan(&state.GameId, &state.RoundNumber, &cardID)
+    if err != nil {
+        return GameState{}, err
+    }
+
+    state.CurrentCard, err = db.BlackCardForID(cardID)
+    if err != nil {
+        return GameState{}, err
+    }
+
+    state.PlayerCount, err = db.PlayerCount(gameID)
+    if err != nil {
+        return GameState{}, err
+    }
+
+    state.CurrentJudge, err = db.CurrentJudge(gameID)
+    if err != nil {
+        return GameState{}, err
+    }
+
+    return state, nil
+}
+
 func (db *Database) GameStateForPlayer(gameID uint32, playerID uint32) (GameState, error) {
 
     handRows, err := db.PlayerHandQuery.Query(playerID, gameID)
@@ -229,19 +288,28 @@ func (db *Database) GameStateForPlayer(gameID uint32, playerID uint32) (GameStat
         cards = append(cards, card)
     }
 
-    var state GameState
-    var cardID uint32
-    err = db.GameStateQuery.QueryRow(gameID).Scan(&state.GameId, &state.RoundNumber, &cardID)
-    if err != nil {
-        return GameState{}, err
-    }
-
-    state.CurrentCard, err = db.BlackCardForID(cardID)
-
+    state, err := db.GameStateNoPlayer(gameID)
     if err != nil {
         return GameState{}, err
     }
 
     state.Hand = cards
     return state, nil
+}
+
+func (db* Database) GetGames() ([]*Game, error) {
+    games := make([]*Game, 0)
+    gameRows, err := db.GamesQuery.Query()
+    if err != nil {
+        return games, err
+    }
+
+    for gameRows.Next() {
+        var gameID uint32
+        gameRows.Scan(&gameID)
+
+        games = append(games, NewGame(gameID))
+    }
+
+    return games, nil
 }
