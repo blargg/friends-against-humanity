@@ -13,8 +13,6 @@ type Database struct {
     PlayerHandQuery     *sql.Stmt
     PlayerCountQuery    *sql.Stmt
     PlayersQuery        *sql.Stmt
-    BlackCardQuery      *sql.Stmt
-    WhiteCardQuery      *sql.Stmt
     PlayCardQuery       *sql.Stmt
     UpdateHandQuery     *sql.Stmt
     RecordRoundQuery    *sql.Stmt
@@ -25,6 +23,7 @@ type Database struct {
     JudgeQuery          *sql.Stmt
     CardPlayedByQuery   *sql.Stmt
     GamesQuery          *sql.Stmt
+    InPlayPileQuery     *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -44,19 +43,11 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.PlayerHandQuery, err = db.DB.Prepare("SELECT CardID, Value FROM PlayerHand WHERE PlayerID = ? AND GameID = ? AND RoundPlayed = 0")
+    db.PlayerHandQuery, err = db.DB.Prepare("SELECT CardID FROM PlayerHand WHERE PlayerID = ? AND GameID = ? AND RoundPlayed = 0")
     if err != nil {
         log.Fatal(err)
     }
     db.PlayersQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE GameID = ?")
-    if err != nil {
-        log.Fatal(err)
-    }
-    db.BlackCardQuery, err = db.DB.Prepare("SELECT * FROM BlackCard WHERE ID = ?")
-    if err != nil {
-        log.Fatal(err)
-    }
-    db.WhiteCardQuery, err = db.DB.Prepare("SELECT * FROM WhiteCard WHERE ID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -96,6 +87,10 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.InPlayPileQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand CROSS JOIN Game WHERE RoundPlayed = Game.CurrentRoundNumber AND GameID = ? AND Game.ID = GameID")
+    if err != nil {
+        log.Fatal(err)
+    }
     db.GamesQuery, err = db.DB.Prepare("SELECT ID FROM Game")
     if err != nil {
         log.Fatal(err)
@@ -106,31 +101,8 @@ func (db * Database) Deinit() {
     db.DB.Close()
 }
 
-func (db *Database) BlackCardForID(cardID uint32) (BlackCard, error) {
-
-    var card BlackCard
-    err := db.BlackCardQuery.QueryRow(cardID).Scan(&card.ID, &card.Value)
-    if err != nil {
-        return BlackCard{}, err
-    }
-
-    return card, nil
-}
-
-func (db *Database) WhiteCardForID(cardID uint32) (WhiteCard, error) {
-
-    var card WhiteCard
-    err := db.WhiteCardQuery.QueryRow(cardID).Scan(&card.ID, &card.Value)
-    if err != nil {
-        return WhiteCard{}, err
-    }
-
-    return card, nil
-}
-
 func (db *Database) PlayCard(cardID uint32, gameID uint32, playerID uint32) error {
     state, err := db.GameStateNoPlayer(gameID)
-    log.Println("%d playing %d on round %d in game %d", playerID, cardID, state.RoundNumber, gameID)
     _, err = db.PlayCardQuery.Query(state.RoundNumber, cardID, playerID, gameID)
     return err
 }
@@ -247,6 +219,21 @@ func (db *Database) CardPlayedBy(gameID uint32, cardID uint32) (uint32, error) {
     return playerID, nil
 }
 
+func (db *Database) InPlayPile(gameID uint32) ([]uint32, error) {
+    var cards []uint32
+
+    rows, err := db.InPlayPileQuery.Query(gameID)
+    if err != nil {
+        return cards, err
+    }
+    for rows.Next() {
+        var card uint32
+        rows.Scan(&card)
+        cards = append(cards, card)
+    }
+    return cards, nil
+}
+
 func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
 
     var state GameState
@@ -256,7 +243,7 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
         return GameState{}, err
     }
 
-    state.CurrentCard, err = db.BlackCardForID(cardID)
+    state.CurrentBlackCard = cardID
     if err != nil {
         return GameState{}, err
     }
@@ -271,6 +258,11 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
         return GameState{}, err
     }
 
+    state.InPlay, err = db.InPlayPile(gameID)
+    if err != nil {
+        return GameState{}, err
+    }
+
     return state, nil
 }
 
@@ -281,10 +273,10 @@ func (db *Database) GameStateForPlayer(gameID uint32, playerID uint32) (GameStat
         return GameState{}, err
     }
 
-    var cards []WhiteCard
+    var cards []uint32
     for handRows.Next() {
-        var card WhiteCard
-        handRows.Scan(&card.ID, &card.Value)
+        var card uint32
+        handRows.Scan(&card)
         cards = append(cards, card)
     }
 

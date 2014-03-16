@@ -4,24 +4,16 @@ import (
     "log"
 )
 
-type BlackCard struct {
-    ID      uint32
-    Value   string
-}
-
-type WhiteCard struct {
-    ID      uint32
-    Value   string
-}
-
 type GameState struct {
     GameId          uint32
+    PlayerId          uint32
     RoundNumber     uint32
-    CurrentCard     BlackCard
+    CurrentBlackCard     uint32
     CurrentJudge    uint32
     PlayerCount     uint32
 
-    Hand        []WhiteCard
+    Hand        []uint32
+    InPlay        []uint32
 }
 
 type Game struct {
@@ -54,9 +46,9 @@ func (game *Game) PlayerConnect(playerID uint32, listenChannel chan GameState) {
 func (game *Game) BroadcastGameState(db *Database) {
     for playerId, broadcaster := range game.broadcasters { 
         gameState, err := db.GameStateForPlayer(game.ID, playerId)
-    if err != nil {
-        log.Fatal(err)
-    }
+        if err != nil {
+            log.Fatal(err)
+        }
         broadcaster.Broadcast(gameState)
     }
 }
@@ -72,7 +64,7 @@ func (game *Game) BroadcastGameStateToPlayer(db *Database, playerId uint32) {
 func (game *Game) PlayCard(db *Database, playerID uint32, cardID uint32) {
     db.PlayCard(cardID, game.ID, playerID)
     db.DrawCard(game.ID, playerID)
-    game.BroadcastGameStateToPlayer(db, playerID)
+    game.BroadcastGameState(db)
 }
 
 func (game *Game) PickWinningCard(db *Database, cardID uint32) {

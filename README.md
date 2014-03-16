@@ -1,6 +1,34 @@
 Friends Against Humanity
 ========================
 
+API
+-----
+
+Currently only supports playing a game over a websocket. Creating players, joining/creating games, ect will come soon. For the demo all this information should be pre-loaded into the database.
+
+Websocket Address hostname:port/GameState
+
+Play Card/Pick Winning Card Message Format 
+{ 
+    GameId
+    PlayerId
+    PlayerAuth 
+    CardId - The card being played, or the winning card
+    End
+}
+
+GameState Update Message Format
+{
+    GameId
+    RoundNumber
+    CurrentBlackCard
+    CurrentJudge
+    PlayerCount
+
+    Hand - Player's Hand, Array of CardID's
+    InPlay - Cards on table, Array of CardID's
+}
+
 Setup
 -----
 
