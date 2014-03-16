@@ -1,0 +1,178 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto:400,500);
+html, body
+{
+    width: 100%;
+    height: 100%;
+    overflow-x: hidden;
+}
+
+.main-container {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    height: auto;
+    display: -webkit-box;
+    display: -moz-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.sidebar {
+    padding: 0;
+    min-height: 100%;
+    min-width: 0;
+    max-width: 400px;
+    background-color: #777;
+    box-shadow: inset -10px 0 10px -9px #000, inset 10px 0 10px -9px #000;
+    transition: flex 0.3s, min-width 0.3s;
+    -webkit-box-flex: 2;            /* OLD - iOS 6-, Safari 3.1-6 */
+    -moz-box-flex: 2;                 /* OLD - Firefox 19- */
+    -webkit-flex: 2;                    /* Chrome */
+    -ms-flex: 2;                            /* IE 10 */
+    flex: 2;
+}
+
+.sidebar:hover {
+    -webkit-box-flex: 12;            /* OLD - iOS 6-, Safari 3.1-6 */
+    -moz-box-flex: 12;                 /* OLD - Firefox 19- */
+    -webkit-flex: 12;                    /* Chrome */
+    -ms-flex: 12;                            /* IE 10 */
+    flex: 12;
+    min-width: 150px;
+    max-width: 400px;
+}
+
+.hand {
+    -webkit-box-flex: 20;            /* OLD - iOS 6-, Safari 3.1-6 */
+    -moz-box-flex: 20;                 /* OLD - Firefox 19- */
+    -webkit-flex: 20;                    /* Chrome */
+    -ms-flex: 20;                         /* IE 10 */
+    flex: 20;
+    padding-top: 16px;
+    padding-left: 16px;
+}
+
+.round {
+    -webkit-box-flex: 6;            /* OLD - iOS 6-, Safari 3.1-6 */
+    -moz-box-flex: 6;                 /* OLD - Firefox 19- */
+    -webkit-flex: 6;                    /* Chrome */
+    -ms-flex: 6;                            /* IE 10 */
+    flex: 6;
+    border-left: 1px dotted #444;
+}
+
+ul.game-session {
+
+    list-style-type: none;
+    padding: 0;
+}
+
+ul.game-session li {
+    overflow: hidden;
+    cursor: default;
+    line-height: 56px;
+    font-family: Roboto;
+    font-weight: 500;
+    font-size: 24px;
+    white-space: nowrap;
+    padding: 8px;
+    border-bottom: 1px solid #555;
+    transition: background-color 0.1s;
+    overflow-x: hidden;
+}
+
+ul.game-session li:hover {
+    background-color: #FFF;
+}
+
+.game-session-players {
+    font-size: 12px;
+    padding: 0 8px;
+    margin-right: 8px;
+    color: #f9f9f9;
+    background-color: #3da8e3;
+    border-radius: 3px;
+    display: block;
+    float: left;
+}
+
+.game-session-name {
+    display: block;
+    text-align: right;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.game-controls
+{
+    position: fixed;
+    padding: 8px;
+    z-index: 1;
+    background-color: white;
+}
+
+.cards {
+    margin-top: 64px;
+}
+
+.card {
+    cursor: default;
+    float: left;
+    border: 1px solid black;
+    border-radius: 8px;
+    margin: 16px 8px;
+    padding: 16px;
+    font-size: 16px;
+    font-family: helvetica;
+    font-weight: 900;
+    width: 200px;
+    height: 300px;
+}
+
+.card::after {
+    font-size: 12px;
+    position: absolute;
+    bottom: 16px;
+    display: block;
+    content: 'Cards Against Humanity';
+}
+
+.card-black {
+    color: white;
+    background-color: black;
+}
+
+.card-black::after {
+    color: white;
+}
+
+.card-fix {
+    position: fixed;
+}
+
+.card-selectable {
+    position: relative;
+    top: 0;
+    transition: top 0.1s;
+}
+
+.card-selectable:hover {
+    top: -20px;
+}
+
+.card-selected {
+    top: -24px !important;
+}
+
+.card-selected-0 {
+    box-shadow: 0 0 1px 2px #87eb41;
+}
+
+.card-selected-1 {
+    box-shadow: 0 0 1px 2px #fece10;
+}
+
+.card-selected-2 {
+    box-shadow: 0 0 1px 2px #e74c3c;
+}
