@@ -7,7 +7,6 @@ import (
     "net/http"
     "strings"
     "code.google.com/p/go.net/websocket"
-    "strconv"
 )
 
 const (
@@ -46,53 +45,45 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
     id := strings.TrimPrefix(ws.Config().Location.Path, "/")
     log.Println("websocket: ", id)
 
-    var playerId uint32
-    var playerAuth uint32
-    var gameId uint32
-
-    playerIdInt, err := strconv.Atoi(ws.Config().Header.Get("PlayerId"))
-    if err != nil {
-        log.Fatal(err)
-    }
-    playerAuthInt, err := strconv.Atoi(ws.Config().Header.Get("AuthToken"))
-    if err != nil {
-        log.Fatal(err)
-    }
-    gameIdInt, err := strconv.Atoi(ws.Config().Header.Get("GameId"))
-    if err != nil {
-        log.Fatal(err)
+    var auth struct {
+        PlayerId uint32   `json:"PlayerId"`
+        PlayerAuth uint32 `json:"AuthToken"`
+        GameId uint32     `json:"GameId"`
     }
 
-    playerId = uint32(playerIdInt)
-    playerAuth = uint32(playerAuthInt)
-    gameId = uint32(gameIdInt)
+    if err := websocket.JSON.Receive(ws, &auth); err != nil {
+        return
+    }
 
-    authentic, err := srv.db.AuthenticatePlayer(playerId, playerAuth)
+
+    authentic, err := srv.db.AuthenticatePlayer(auth.PlayerId, auth.PlayerAuth)
     if err != nil || !authentic {
         return
     }
+
+    log.Println(auth);
 
     killChan := make(chan bool, 1)
     listenChan := make(chan GameState, 1)
 
     var msg struct {
-        CardId      uint32 
+        CardId      uint32
     }
 
     go func() {
         for {
-            
+
             if err := websocket.JSON.Receive(ws, &msg); err != nil {
                 break
             }
 
-            currentJudge, _ := srv.db.CurrentJudge(gameId)
-            if playerId == currentJudge {
-                srv.Games[gameId].PickWinningCard(&srv.db, msg.CardId)
+            currentJudge, _ := srv.db.CurrentJudge(auth.GameId)
+            if auth.PlayerId == currentJudge {
+                srv.Games[auth.GameId].PickWinningCard(&srv.db, msg.CardId)
             } else {
-                srv.Games[gameId].PlayCard(&srv.db, playerId, msg.CardId)
+                srv.Games[auth.GameId].PlayCard(&srv.db, auth.PlayerId, msg.CardId)
             }
-        
+
         }
         log.Println("recieve break")
         killChan <- true
@@ -114,8 +105,8 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
         killChan <- true
     }()
 
-    srv.Games[gameId].PlayerConnect(playerId, listenChan)
-    srv.Games[gameId].BroadcastGameStateToPlayer(&srv.db, playerId)
+    srv.Games[auth.GameId].PlayerConnect(auth.PlayerId, listenChan)
+    srv.Games[auth.GameId].BroadcastGameStateToPlayer(&srv.db, auth.PlayerId)
 
     // One of the threads has ended, now we must end
     <-killChan

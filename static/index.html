@@ -16,9 +16,9 @@
         <div class="sidebar">
           <ul class="game-session">
             <li style="text-align: center" ng-click="addGame()"><i class="fa fa-plus"></i></li>
-            <li ng-repeat="game in gameSessions track by $index" ng-click="selectGame(game)" title="{{ game.name }}">
-              <span class="game-session-players">{{ game.playerCount }}/{{ game.playerCapacity }}</span>
-              <span class="game-session-name">{{ game.name }}</span>
+            <li ng-repeat="game in games track by $index" ng-click="selectGame(game)" title="{{ game.name }}">
+              <span class="game-session-players">{{ game.PlayerCount || 0 }}/{{ game.PlayerCapacity || "&infin;" }}</span>
+              <span class="game-session-name">{{ game.Name }}</span>
             </li>
           </ul>
         </div>
@@ -39,13 +39,13 @@
           <div class="cards">
             <div class="card card-selectable"
                  ng-repeat="card in game.hand track by $index"
-                 ng-class="isCardSelected(card.id)"
-                 ng-click="selectCard(card.id)"
-                 title="{{ card.text }}">{{ card.text }}</div>
+                 ng-class="isCardSelected(card)"
+                 ng-click="selectCard(card)"
+                 title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}</div>
           </div>
         </div>
         <div class="round">
-          <div class="card card-black card-fix" title="{{ game.currentBlackCard }}">{{ game.currentBlackCard.text }}</div>
+          <div class="card card-black card-fix" title="{{ cards[game.currentBlackCard - 1].text }}">{{ cards[game.currentBlackCard - 1].text }}</div>
         </div>
       </div>
       <script src="js/jquery-1.10.1.min.js"></script>

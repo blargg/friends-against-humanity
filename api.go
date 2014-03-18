@@ -34,24 +34,24 @@ type LeaveGameMessage struct {
 
 func (srv *Server) HandlePlayerInfoRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, PlayerInfoMessage {
-        PlayerId        : 117,
-        PlayerAuthId    : 711,
-        PlayerName      : "TestPlayer117",
+        PlayerId        : 2,
+        PlayerAuthId    : 124,
+        PlayerName      : "Test",
     })
 }
 
 func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, CreateGameMessage {
         GameId  : 117,
-    })    
+    })
 }
 
 func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, AvailableGamesMessage{
         Games : []GameInfo{
            GameInfo {
-            Name    : "TestGame1",
-            GameId  : 123,
+            Name    : "TESTGAME",
+            GameId  : 1,
            },
            GameInfo {
             Name    : "TestGame2",
@@ -70,13 +70,13 @@ func (srv *Server) HandleJoinGameRequest(writer http.ResponseWriter, request *ht
     if err != nil {
         log.Fatal(err)
     }
-    WriteResponse(writer, 200, state)    
+    WriteResponse(writer, 200, state)
 }
 
 func (srv *Server) HandleLeaveGameRequest(writer http.ResponseWriter, request *http.Request) {
     WriteResponse(writer, 200, LeaveGameMessage{
         Success : true,
-    })      
+    })
 }
 
 func (srv *Server) HandleTestGameState(writer http.ResponseWriter, request *http.Request) {

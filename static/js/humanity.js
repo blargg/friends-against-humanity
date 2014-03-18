@@ -1,67 +1,32 @@
 var cardModule = angular.module('cardModule', []);
 
-function shuffleArray(a)
-{
-    for (var i = 0; i < a.length - 1; i++)
-    {
-        var swapIdx = i + Math.floor(Math.random() * (a.length - i))
-        var tmp = a[i];
-        a[i] = a[swapIdx]
-        a[swapIdx] = tmp;
-    }
-}
-
 function CardController($scope, $http)
 {
-    shuffleArray(masterCards);
+    var backendBase = 'http://127.0.0.1/'
+    $scope.cards = masterCards;
+    $scope.games = [];
+    $scope.game = undefined;
+    $scope.gameSocket = undefined;
+    $scope.playerId = undefined;
+    $scope.playerAuth = undefined;
+    $scope.playerName = undefined;
+    $scope.selectedCards = [];
 
-    $scope.gameSessions =
-    [
-        { 'name': 'Best Game', 'playerCount': 4, 'playerCapacity': 5 },
-        { 'name': 'Worst Game', 'playerCount': 1, 'playerCapacity': 5 },
-        { 'name': 'Lonely Island', 'playerCount': 1, 'playerCapacity': 2 },
-        { 'name': 'Random Atoll', 'playerCount': 10, 'playerCapacity': 11 }
-    ];
-
-    for (var gameSessionIndex = 0; gameSessionIndex < $scope.gameSessions.length; gameSessionIndex++)
+    $http.get(backendBase + 'AvailableGames').
+    success(function(data)
     {
-        $scope.gameSessions[gameSessionIndex]['id'] = gameSessionIndex;
-    }
+        $scope.games = data['Games'];
+        console.log($scope.games);
+    });
 
-    for (var gameSessionIndex = 0; gameSessionIndex < 10; gameSessionIndex++)
+    $http.get(backendBase + 'PlayerInfo').
+    success(function(data)
     {
-        $scope.gameSessions.push({ 'name': 'Random ' + Math.floor(Math.random() * 100), 'playerCount': 0, 'playerCapacity': 5 });
-    }
-
-    var game = {};
-    var blackCards = []
-    var whiteCards = []
-    $scope.game = game;
-    for (var cardIndex = 0; cardIndex < masterCards.length; cardIndex++)
-    {
-        var cardType = masterCards[cardIndex]['cardType'];
-        var cardExpansion = masterCards[cardIndex]['expansion'];
-        if (cardExpansion != 'Base') // The expansions are weird
-        {
-            continue;
-        }
-        var text = masterCards[cardIndex]['text'];
-        text = text.replace(/_/g, '_______');
-        text = text.replace(/<br>/g, '\n');
-        text = text.replace(/&reg;/g, '');
-        masterCards[cardIndex]['text'] = text;
-
-        if (cardType == 'Q')
-        {
-            blackCards.push(masterCards[cardIndex]);
-        }
-        else if (cardType == 'A')
-        {
-            whiteCards.push(masterCards[cardIndex]);
-        }
-    }
-    game.currentBlackCard = blackCards[0];
-    game.hand = whiteCards.slice(0, 100);
+        console.log(data);
+        $scope.playerId = data['PlayerId'];
+        $scope.playerAuth = data['PlayerAuthId'];
+        $scope.playerName = data['PlayerName'];
+    });
 
     $scope.addGame = function()
     {
@@ -70,10 +35,30 @@ function CardController($scope, $http)
 
     $scope.selectGame = function(gameSession)
     {
-        console.log("select game: " + gameSession.name + "( " + gameSession.id + " )");
+        console.log("select game: " + gameSession.Name + "( " + gameSession.GameId + " )");
+        $scope.gameSocket = new WebSocket('ws://127.0.0.1/' + 'GameState');
+
+        $scope.gameSocket.onopen = function(event) {
+            var connectData = {
+                'PlayerId': $scope.playerId,
+                'AuthToken': $scope.playerAuth,
+                'GameId': gameSession.GameId
+            };
+            $scope.gameSocket.send(JSON.stringify(connectData));
+        };
+
+        $scope.gameSocket.onmessage = function(event) {
+            var data = JSON.parse(event.data);
+            $scope.game = {
+                'currentBlackCard':  data['CurrentBlackCard'],
+                'hand':  data['Hand'],
+                'judge': data['CurrentJudge']
+            };
+            console.log(data);
+            $scope.$digest();
+        };
     };
 
-    $scope.selectedCards = [];
 
     $scope.isCardSelected = function(cardId)
     {
@@ -92,7 +77,8 @@ function CardController($scope, $http)
         if (selectionIndex == -1)
         {
             $scope.selectedCards.push(cardId);
-            if ($scope.selectedCards.length > $scope.game.currentBlackCard['numAnswers'])
+            var numAnswers = $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
+            if ($scope.selectedCards.length > numAnswers)
             {
                 $scope.selectedCards.splice(0, 1);
             }
@@ -105,6 +91,10 @@ function CardController($scope, $http)
 
     $scope.submitSelection = function()
     {
+        var connectData = {
+            'CardId': $scope.selectedCards[0]
+        };
+        $scope.gameSocket.send(JSON.stringify(connectData));
         console.log("submit selection: " + $scope.selectedCards);
     }
 
