@@ -14,10 +14,10 @@ const (
     ENDPOINT_PLAYER_INFO        = "PlayerInfo"
     ENDPOINT_CREATE_GAME        = "CreateGame"
     ENDPOINT_AVAILABLE_GAMES    = "AvailableGames"
-    ENDPOINT_JOIN_GAME          = "JoinGame"
     ENDPOINT_LEAVE_GAME         = "LeaveGame"
     ENDPOINT_TEST_GAME_STATE    = "TestGameState"
     ENDPOINT_PLAY_CARD          = "TestPlayCard"
+    ENDPOINT_CREATE_PLAYER      = "CreatePlayer"
 
 )
 
@@ -61,7 +61,14 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
         return
     }
 
-    log.Println(auth);
+    joined, err := srv.db.IsPlayerInGame(auth.PlayerId, auth.GameId)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if !joined {
+        srv.Games[auth.GameId].PlayerJoin(&srv.db, auth.PlayerId)
+    }
 
     killChan := make(chan bool, 1)
     listenChan := make(chan GameState, 1)
@@ -127,14 +134,10 @@ func (srv *Server) HandleGET(w http.ResponseWriter, rq *http.Request) {
             srv.HandleCreateGameRequest(w, rq)
         case ENDPOINT_AVAILABLE_GAMES:
             srv.HandleAvailableGamesRequest(w, rq)
-        case ENDPOINT_JOIN_GAME:
-            srv.HandleJoinGameRequest(w, rq)
         case ENDPOINT_LEAVE_GAME:
             srv.HandleLeaveGameRequest(w, rq)
-        case ENDPOINT_TEST_GAME_STATE:
-            srv.HandleTestGameState(w, rq)
-        case ENDPOINT_PLAY_CARD:
-            srv.HandleTestPlayCard(w, rq)
+        case ENDPOINT_CREATE_PLAYER:
+            srv.HandleCreatePlayerRequest(w, rq)
         case ENDPOINT_GAME_STATE:
             srv.WSHandler.ServeHTTP(w, rq)
         default:

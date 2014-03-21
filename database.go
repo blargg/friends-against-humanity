@@ -4,26 +4,34 @@ import (
     "log"
     "errors"
     "database/sql"
+    "crypto/rand"
+    "math/big"
     _ "github.com/go-sql-driver/mysql"
 )
 
 type Database struct {
-    DB                  *sql.DB
-    GameStateQuery      *sql.Stmt
-    PlayerHandQuery     *sql.Stmt
-    PlayerCountQuery    *sql.Stmt
-    PlayersQuery        *sql.Stmt
-    PlayCardQuery       *sql.Stmt
-    UpdateHandQuery     *sql.Stmt
-    RecordRoundQuery    *sql.Stmt
-    NewRoundQuery       *sql.Stmt
-    DrawWhiteCardQuery  *sql.Stmt
-    DrawBlackCardQuery  *sql.Stmt
-    AuthenticationQuery *sql.Stmt
-    JudgeQuery          *sql.Stmt
-    CardPlayedByQuery   *sql.Stmt
-    GamesQuery          *sql.Stmt
-    InPlayPileQuery     *sql.Stmt
+    DB                      *sql.DB
+    GameStateQuery          *sql.Stmt
+    PlayerHandQuery         *sql.Stmt
+    PlayerCountQuery        *sql.Stmt
+    PlayersQuery            *sql.Stmt
+    PlayCardQuery           *sql.Stmt
+    UpdateHandQuery         *sql.Stmt
+    RecordRoundQuery        *sql.Stmt
+    NewRoundQuery           *sql.Stmt
+    DrawWhiteCardQuery      *sql.Stmt
+    DrawBlackCardQuery      *sql.Stmt
+    AuthenticationQuery     *sql.Stmt
+    JudgeQuery              *sql.Stmt
+    CardPlayedByQuery       *sql.Stmt
+    GamesQuery              *sql.Stmt
+    InPlayPileQuery         *sql.Stmt
+    CreatePlayerQuery       *sql.Stmt
+    LookupPlayerQuery       *sql.Stmt
+    LookupPlayerByAuthQuery *sql.Stmt
+    PlayerJoinQuery         *sql.Stmt
+    PlayerIsInGameQuery     *sql.Stmt
+    CreateGameQuery         *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -91,7 +99,31 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.GamesQuery, err = db.DB.Prepare("SELECT ID FROM Game")
+    db.GamesQuery, err = db.DB.Prepare("SELECT ID, Name FROM Game")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.CreatePlayerQuery, err = db.DB.Prepare("INSERT INTO Player (AuthToken, Name) VALUES( ?, ? )")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.LookupPlayerQuery, err = db.DB.Prepare("SELECT * FROM Player WHERE ID = ? AND AuthToken = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.LookupPlayerByAuthQuery, err = db.DB.Prepare("SELECT * FROM Player WHERE AuthToken = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.PlayerJoinQuery, err = db.DB.Prepare("INSERT INTO PlayersInGame VALUES ( ?, ?, ? )")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.PlayerIsInGameQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE PlayerID = ? AND GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.CreateGameQuery, err = db.DB.Prepare("INSERT INTO Game (Name, CurrentRoundNumber, CurrentBlackCard) VALUES (?, 1, ?)")
     if err != nil {
         log.Fatal(err)
     }
@@ -103,26 +135,26 @@ func (db * Database) Deinit() {
 
 func (db *Database) PlayCard(cardID uint32, gameID uint32, playerID uint32) error {
     state, err := db.GameStateNoPlayer(gameID)
-    _, err = db.PlayCardQuery.Query(state.RoundNumber, cardID, playerID, gameID)
+    _, err = db.PlayCardQuery.Exec(state.RoundNumber, cardID, playerID, gameID)
     return err
 }
 
 func (db *Database) DrawCard(gameID uint32, playerID uint32) error {
     state, err := db.GameStateNoPlayer(gameID)
     cardID, err := db.DrawWhiteCard(gameID)
-    _, err = db.UpdateHandQuery.Query(cardID, playerID, gameID, state.RoundNumber)
+    _, err = db.UpdateHandQuery.Exec(cardID, playerID, gameID, state.RoundNumber)
     return err
 }
 
 func (db *Database) RecordRound(roundNumber uint32, winnerID uint32, cardID uint32, gameID uint32) error {
-    _, err := db.RecordRoundQuery.Query(roundNumber, gameID, winnerID, cardID)
+    _, err := db.RecordRoundQuery.Exec(roundNumber, gameID, winnerID, cardID)
     return err
 }
 
 func (db *Database) NewRound(gameID uint32) error {
     currentState, err := db.GameStateNoPlayer(gameID)
     blackCardID, err := db.DrawBlackCard(gameID)
-    _, err = db.NewRoundQuery.Query(currentState.RoundNumber + 1, blackCardID, gameID)
+    _, err = db.NewRoundQuery.Exec(currentState.RoundNumber + 1, blackCardID, gameID)
     return err
 }
 
@@ -298,10 +330,68 @@ func (db* Database) GetGames() ([]*Game, error) {
 
     for gameRows.Next() {
         var gameID uint32
-        gameRows.Scan(&gameID)
+        var gameName string
+        gameRows.Scan(&gameID, &gameName)
 
-        games = append(games, NewGame(gameID))
+        games = append(games, NewGame(gameID, gameName))
     }
 
     return games, nil
+}
+
+func (db* Database) CreatePlayer(name string) (PlayerInfoMessage, error) {
+
+    authBigInt, err := rand.Int(rand.Reader, big.NewInt(0xFFFFFFFF))
+    if err != nil {
+        log.Fatal(err)
+    }
+    auth := uint32(authBigInt.Uint64())
+
+    res, err := db.CreatePlayerQuery.Exec(auth, name)
+    
+    if err != nil {
+        return PlayerInfoMessage{}, err
+    }
+
+    lastInsert, err := res.LastInsertId()
+    if err != nil {
+        return PlayerInfoMessage{}, err
+    }
+
+    var player PlayerInfoMessage 
+    player.PlayerAuthId = auth
+    player.PlayerName = name
+    player.PlayerId = uint32(lastInsert) 
+
+
+    return player, nil
+}
+
+func (db* Database) PlayerJoin(playerID uint32, gameID uint32, turnOrder uint32) (error) {
+
+    _, err := db.PlayerJoinQuery.Exec(playerID, gameID, turnOrder)
+
+    return err
+}
+
+func (db* Database) IsPlayerInGame(playerID uint32, gameID uint32) (bool, error) {
+
+    err := db.PlayerIsInGameQuery.QueryRow(playerID, gameID).Scan(&playerID)
+    if err == sql.ErrNoRows {
+        return false, nil
+    }
+    if err != nil {
+        return false, err
+    }
+
+    return true, err
+}
+
+func (db* Database) CreateGame(name string) (uint32, error) {
+
+    res, err := db.CreateGameQuery.Exec(name, 1)
+
+    lastInsert, err := res.LastInsertId()
+
+    return uint32(lastInsert), err
 }

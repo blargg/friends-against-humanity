@@ -18,12 +18,14 @@ type GameState struct {
 
 type Game struct {
     ID              uint32
+    Name            string
     broadcasters    map[uint32]*Broadcaster
 }
 
-func NewGame(gameID uint32) *Game {
+func NewGame(gameID uint32, gameName string) *Game {
     g := &Game{
         ID: gameID,
+        Name: gameName,
         broadcasters : make(map[uint32]*Broadcaster),
     }
 
@@ -31,7 +33,15 @@ func NewGame(gameID uint32) *Game {
 }
 
 func (game *Game) PlayerJoin(db* Database, playerID uint32) {
+    state, err := db.GameStateNoPlayer(game.ID)
+    if err != nil {
+        log.Fatal(err)
+    }
 
+    db.PlayerJoin(playerID, game.ID, state.PlayerCount + 1)
+    for i := 0; i < 10; i++ {
+        db.DrawCard(game.ID, playerID)
+    }
 }
 
 func (game *Game) PlayerConnect(playerID uint32, listenChannel chan GameState) {
