@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: FriendsAgainstHumanity
+-- Host: localhost    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -112,7 +112,6 @@ SET character_set_client = utf8;
 /*!50001 CREATE TABLE `PlayerHand` (
   `PlayerID` tinyint NOT NULL,
   `CardID` tinyint NOT NULL,
-  `Value` tinyint NOT NULL,
   `RoundPlayed` tinyint NOT NULL,
   `GameID` tinyint NOT NULL
 ) ENGINE=MyISAM */;
@@ -246,7 +245,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `PlayerHand` AS select `CardInHand`.`PlayerID` AS `PlayerID`,`CardInHand`.`CardID` AS `CardID`,`WhiteCard`.`Value` AS `Value`,`CardInHand`.`RoundPlayed` AS `RoundPlayed`,`CardInHand`.`GameID` AS `GameID` from ((`Player` join `CardInHand`) join `WhiteCard`) where ((`Player`.`ID` = `CardInHand`.`PlayerID`) and (`WhiteCard`.`ID` = `CardInHand`.`CardID`)) */;
+/*!50001 VIEW `PlayerHand` AS select `CardInHand`.`PlayerID` AS `PlayerID`,`CardInHand`.`CardID` AS `CardID`,`CardInHand`.`RoundPlayed` AS `RoundPlayed`,`CardInHand`.`GameID` AS `GameID` from ((`Player` join `CardInHand`) join `WhiteCard`) where ((`Player`.`ID` = `CardInHand`.`PlayerID`) and (`WhiteCard`.`ID` = `CardInHand`.`CardID`)) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -260,4 +259,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-16 15:39:28
+-- Dump completed on 2014-03-24 15:22:23

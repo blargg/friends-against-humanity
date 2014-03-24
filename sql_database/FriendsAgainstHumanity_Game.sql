@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: FriendsAgainstHumanity
+-- Host: localhost    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -18,27 +18,30 @@ USE `FriendsAgainstHumanity`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `PlayersInGame`
+-- Table structure for table `Game`
 --
 
-DROP TABLE IF EXISTS `PlayersInGame`;
+DROP TABLE IF EXISTS `Game`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `PlayersInGame` (
-  `PlayerID` int(11) DEFAULT NULL,
-  `GameID` int(11) DEFAULT NULL,
-  `TurnOrder` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `Game` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `Name` char(64) DEFAULT NULL,
+  `CurrentRoundNumber` int(11) DEFAULT NULL,
+  `CurrentBlackCard` varchar(45) DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `ID_UNIQUE` (`ID`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `PlayersInGame`
+-- Dumping data for table `Game`
 --
 
-LOCK TABLES `PlayersInGame` WRITE;
-/*!40000 ALTER TABLE `PlayersInGame` DISABLE KEYS */;
-INSERT INTO `PlayersInGame` VALUES (1,1,1),(2,1,0);
-/*!40000 ALTER TABLE `PlayersInGame` ENABLE KEYS */;
+LOCK TABLES `Game` WRITE;
+/*!40000 ALTER TABLE `Game` DISABLE KEYS */;
+INSERT INTO `Game` VALUES (1,'TESTGAME',2,'2');
+/*!40000 ALTER TABLE `Game` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -50,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-16 15:39:28
+-- Dump completed on 2014-03-24 15:22:23

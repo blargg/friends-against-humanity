@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: FriendsAgainstHumanity
+-- Host: localhost    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -26,10 +26,10 @@ DROP TABLE IF EXISTS `BlackCard`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `BlackCard` (
   `ID` int(11) NOT NULL AUTO_INCREMENT,
-  `Value` char(128) DEFAULT NULL,
+  `NumAnswers` tinyint(3) unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`ID`),
   UNIQUE KEY `ID_UNIQUE` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=2623 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -38,7 +38,7 @@ CREATE TABLE `BlackCard` (
 
 LOCK TABLES `BlackCard` WRITE;
 /*!40000 ALTER TABLE `BlackCard` DISABLE KEYS */;
-INSERT INTO `BlackCard` VALUES (1,'TestCard'),(2,'testing');
+INSERT INTO `BlackCard` VALUES (459,1),(460,1),(461,1),(462,1),(463,1),(464,1),(465,1),(466,1),(467,1),(468,1),(469,2),(470,1),(471,1),(472,1),(473,1),(474,1),(475,1),(476,1),(477,1),(478,1),(479,1),(480,2),(481,1),(482,2),(483,1),(484,1),(485,1),(486,1),(487,1),(488,2),(489,2),(490,1),(491,1),(492,1),(493,1),(494,1),(495,1),(496,2),(497,1),(498,1),(499,1),(500,1),(501,1),(502,1),(503,1),(504,1),(505,1),(506,1),(507,1),(508,1),(509,1),(510,1),(511,2),(512,2),(513,1),(514,1),(515,1),(516,1),(517,1),(518,1),(519,1),(520,1),(521,2),(522,1),(523,1),(524,1),(525,1),(526,1),(527,1),(528,1),(529,1),(530,1),(531,1),(532,1),(533,3),(534,1),(535,1),(536,1),(537,1),(538,1),(539,1),(540,2),(541,1),(542,2),(543,2),(544,1),(545,3),(546,1),(547,1),(548,1);
 /*!40000 ALTER TABLE `BlackCard` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -51,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-16 15:39:28
+-- Dump completed on 2014-03-24 15:22:23

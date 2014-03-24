@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: 127.0.0.1    Database: FriendsAgainstHumanity
+-- Host: localhost    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -18,28 +18,29 @@ USE `FriendsAgainstHumanity`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `WhiteCard`
+-- Table structure for table `CardInHand`
 --
 
-DROP TABLE IF EXISTS `WhiteCard`;
+DROP TABLE IF EXISTS `CardInHand`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `WhiteCard` (
-  `ID` int(11) NOT NULL AUTO_INCREMENT,
-  `Value` char(128) DEFAULT NULL,
-  PRIMARY KEY (`ID`),
-  UNIQUE KEY `ID_UNIQUE` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
+CREATE TABLE `CardInHand` (
+  `CardID` int(11) DEFAULT NULL,
+  `PlayerID` int(11) DEFAULT NULL,
+  `GameID` int(11) DEFAULT NULL,
+  `RoundAcquired` int(11) DEFAULT NULL,
+  `RoundPlayed` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `WhiteCard`
+-- Dumping data for table `CardInHand`
 --
 
-LOCK TABLES `WhiteCard` WRITE;
-/*!40000 ALTER TABLE `WhiteCard` DISABLE KEYS */;
-INSERT INTO `WhiteCard` VALUES (1,'German Dungeon Porn'),(2,'TestCard');
-/*!40000 ALTER TABLE `WhiteCard` ENABLE KEYS */;
+LOCK TABLES `CardInHand` WRITE;
+/*!40000 ALTER TABLE `CardInHand` DISABLE KEYS */;
+INSERT INTO `CardInHand` VALUES (1,1,1,1,1),(2,1,1,1,0);
+/*!40000 ALTER TABLE `CardInHand` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -51,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-16 15:39:28
+-- Dump completed on 2014-03-24 15:22:23
