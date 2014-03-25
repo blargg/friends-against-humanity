@@ -1,8 +1,10 @@
 package main
 
 import (
-    "net/http"
+    "database/sql"
     "log"
+    "net/http"
+    "strconv"
 )
 
 type PlayerInfoMessage struct {
@@ -33,15 +35,36 @@ type LeaveGameMessage struct {
 }
 
 func (srv *Server) HandlePlayerInfoRequest(writer http.ResponseWriter, request *http.Request) {
-    WriteResponse(writer, 200, PlayerInfoMessage {
-        PlayerId        : 2,
-        PlayerAuthId    : 124,
-        PlayerName      : "Test",
-    })
+    playerIDStr := request.FormValue("ID")
+    playerID, err := strconv.ParseUint(playerIDStr, 10, 31)
+    if err != nil {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Invalid ID",
+        })
+        return
+    }
+
+    player, err := srv.db.LookupPlayer(uint32(playerID))
+    player.PlayerAuthId = 0 // Lets not leak the AuthID
+
+    if err == sql.ErrNoRows {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Player with ID Not Found",
+        })
+        return
+    }
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    WriteResponse(writer, 200, player)
 }
 
 func (srv *Server) HandleCreatePlayerRequest(writer http.ResponseWriter, request *http.Request) {
-    playerName := request.Header.Get("Name")
+    playerName := request.FormValue("Name")
 
     player, err := srv.db.CreatePlayer(playerName)
 
@@ -53,7 +76,7 @@ func (srv *Server) HandleCreatePlayerRequest(writer http.ResponseWriter, request
 }
 
 func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *http.Request) {
-    gameName := request.Header.Get("Name")
+    gameName := request.FormValue("Name")
     gameId, err := srv.db.CreateGame(gameName)
     if err != nil {
         log.Fatal(err)

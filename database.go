@@ -107,7 +107,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.LookupPlayerQuery, err = db.DB.Prepare("SELECT * FROM Player WHERE ID = ? AND AuthToken = ?")
+    db.LookupPlayerQuery, err = db.DB.Prepare("SELECT * FROM Player WHERE ID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -127,7 +127,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-}   
+}
 
 func (db * Database) Deinit() {
     db.DB.Close()
@@ -341,14 +341,14 @@ func (db* Database) GetGames() ([]*Game, error) {
 
 func (db* Database) CreatePlayer(name string) (PlayerInfoMessage, error) {
 
-    authBigInt, err := rand.Int(rand.Reader, big.NewInt(0xFFFFFFFF))
+    authBigInt, err := rand.Int(rand.Reader, big.NewInt(2147483647))
     if err != nil {
         log.Fatal(err)
     }
     auth := uint32(authBigInt.Uint64())
 
     res, err := db.CreatePlayerQuery.Exec(auth, name)
-    
+
     if err != nil {
         return PlayerInfoMessage{}, err
     }
@@ -358,11 +358,22 @@ func (db* Database) CreatePlayer(name string) (PlayerInfoMessage, error) {
         return PlayerInfoMessage{}, err
     }
 
-    var player PlayerInfoMessage 
+    var player PlayerInfoMessage
     player.PlayerAuthId = auth
     player.PlayerName = name
-    player.PlayerId = uint32(lastInsert) 
+    player.PlayerId = uint32(lastInsert)
 
+
+    return player, nil
+}
+
+func (db *Database) LookupPlayer(playerID uint32) (PlayerInfoMessage, error) {
+    var player PlayerInfoMessage
+    err := db.LookupPlayerQuery.QueryRow(playerID).Scan(&player.PlayerId, &player.PlayerName, &player.PlayerAuthId)
+
+    if err != nil {
+        return PlayerInfoMessage{}, err
+    }
 
     return player, nil
 }

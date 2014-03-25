@@ -130,16 +130,28 @@ func (srv *Server) HandleGET(w http.ResponseWriter, rq *http.Request) {
     switch id {
         case ENDPOINT_PLAYER_INFO:
             srv.HandlePlayerInfoRequest(w, rq)
-        case ENDPOINT_CREATE_GAME:
-            srv.HandleCreateGameRequest(w, rq)
         case ENDPOINT_AVAILABLE_GAMES:
             srv.HandleAvailableGamesRequest(w, rq)
+        case ENDPOINT_GAME_STATE:
+            srv.WSHandler.ServeHTTP(w, rq)
+        default:
+            WriteResponse(w, 400, OKMessage {
+                OK : false,
+                Message : "Received Unknown Command",
+            })
+    }
+}
+
+func (srv *Server) HandlePOST(w http.ResponseWriter, rq *http.Request) {
+    id := strings.TrimPrefix(rq.URL.Path, "/")
+
+    switch id {
+        case ENDPOINT_CREATE_GAME:
+            srv.HandleCreateGameRequest(w, rq)
         case ENDPOINT_LEAVE_GAME:
             srv.HandleLeaveGameRequest(w, rq)
         case ENDPOINT_CREATE_PLAYER:
             srv.HandleCreatePlayerRequest(w, rq)
-        case ENDPOINT_GAME_STATE:
-            srv.WSHandler.ServeHTTP(w, rq)
         default:
             WriteResponse(w, 400, OKMessage {
                 OK : false,
@@ -160,6 +172,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, rq *http.Request) {
     log.Printf("\x1B[" + "1;32" + "m" +  rq.Method + "\x1B[0m " + rq.RequestURI)
     switch rq.Method {
         case "GET": srv.HandleGET(w, rq)
+        case "POST": srv.HandlePOST(w, rq)
         default: srv.HandleUnknown(w, rq)
     }
 }
