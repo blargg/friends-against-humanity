@@ -67,6 +67,7 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
     }
 
     if !joined {
+        srv.InitGames()
         srv.Games[auth.GameId].PlayerJoin(&srv.db, auth.PlayerId)
     }
 

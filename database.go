@@ -276,23 +276,20 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     }
 
     state.CurrentBlackCard = cardID
-    if err != nil {
-        return GameState{}, err
-    }
 
     state.PlayerCount, err = db.PlayerCount(gameID)
     if err != nil {
-        return GameState{}, err
+        state.PlayerCount = 0
     }
 
     state.CurrentJudge, err = db.CurrentJudge(gameID)
     if err != nil {
-        return GameState{}, err
+        state.CurrentJudge = 0
     }
 
     state.InPlay, err = db.InPlayPile(gameID)
     if err != nil {
-        return GameState{}, err
+        state.InPlay = []uint32{}
     }
 
     return state, nil
