@@ -131,7 +131,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `CurrentJudge` AS select `PlayersInGame`.`PlayerID` AS `PlayerId`,`PlayersInGame`.`GameID` AS `GameID` from ((`PlayersInGame` join `PlayerCount` on((`PlayersInGame`.`GameID` = `PlayerCount`.`GameID`))) join `Game`) where ((`Game`.`ID` = `PlayersInGame`.`GameID`) and (`PlayersInGame`.`TurnOrder` = ((`Game`.`CurrentRoundNumber` - 1) % `PlayerCount`.`PlayerCount`))) */;
+/*!50001 VIEW `CurrentJudge` AS select `PlayersInGame`.`PlayerID` AS `PlayerId`,`PlayersInGame`.`GameID` AS `GameID` from ((`PlayersInGame` join `PlayerCount` on((`PlayersInGame`.`GameID` = `PlayerCount`.`GameID`))) join `Game`) where ((`Game`.`ID` = `PlayersInGame`.`GameID`) and (`PlayersInGame`.`TurnOrder` = (((`Game`.`CurrentRoundNumber` - 1) % `PlayerCount`.`PlayerCount`) + 1))) */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -169,7 +169,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `PlayerCount` AS select `PlayersInGame`.`GameID` AS `GameID`,count(`PlayersInGame`.`PlayerID`) AS `PlayerCount` from `PlayersInGame` group by `PlayersInGame`.`GameID` */;
+/*!50001 VIEW `PlayerCount` AS select `Game`.`ID` AS `GameID`,count(`PlayersInGame`.`PlayerID`) AS `PlayerCount` from (`Game` left join `PlayersInGame` on(((`Game`.`ID` = `PlayersInGame`.`GameID`) and (`PlayersInGame`.`TurnOrder` > 0)))) group by `Game`.`ID` */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -259,4 +259,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-24 15:22:23
+-- Dump completed on 2014-03-27 21:48:15

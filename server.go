@@ -67,7 +67,6 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
     }
 
     if !joined {
-        srv.InitGames()
         srv.Games[auth.GameId].PlayerJoin(&srv.db, auth.PlayerId)
     }
 
@@ -149,6 +148,7 @@ func (srv *Server) HandlePOST(w http.ResponseWriter, rq *http.Request) {
     switch id {
         case ENDPOINT_CREATE_GAME:
             srv.HandleCreateGameRequest(w, rq)
+            srv.InitGames()
         case ENDPOINT_LEAVE_GAME:
             srv.HandleLeaveGameRequest(w, rq)
         case ENDPOINT_CREATE_PLAYER:
