@@ -15,8 +15,7 @@ const (
     ENDPOINT_CREATE_GAME        = "CreateGame"
     ENDPOINT_AVAILABLE_GAMES    = "AvailableGames"
     ENDPOINT_LEAVE_GAME         = "LeaveGame"
-    ENDPOINT_TEST_GAME_STATE    = "TestGameState"
-    ENDPOINT_PLAY_CARD          = "TestPlayCard"
+    ENDPOINT_END_GAME           = "EndGame"
     ENDPOINT_CREATE_PLAYER      = "CreatePlayer"
 
 )
@@ -36,7 +35,6 @@ type OKMessage struct {
 
 func WriteResponse(w http.ResponseWriter, status int, v interface{}) {
     w.Header().Add("Content-Type", "application/json")
-    w.Header().Set("Access-Control-Allow-Origin", "*")
     w.WriteHeader(status)
     wj := json.NewEncoder(w)
     wj.Encode(v)
@@ -153,6 +151,8 @@ func (srv *Server) HandlePOST(w http.ResponseWriter, rq *http.Request) {
             srv.InitGames()
         case ENDPOINT_LEAVE_GAME:
             srv.HandleLeaveGameRequest(w, rq)
+        case ENDPOINT_END_GAME:
+            srv.HandleEndGameRequest(w, rq)
         case ENDPOINT_CREATE_PLAYER:
             srv.HandleCreatePlayerRequest(w, rq)
         default:

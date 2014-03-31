@@ -37,6 +37,10 @@ type Database struct {
     CreateGameQuery         *sql.Stmt
     AnswerCountQuery        *sql.Stmt
     HasPlayedCardQuery      *sql.Stmt
+    EndGameQuery            *sql.Stmt
+    TurnOrderQuery          *sql.Stmt
+    WinningCardQuery        *sql.Stmt
+    PlayerScoresQuery       *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -61,7 +65,11 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.PlayersQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE GameID = ?")
+    db.PlayersQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE GameID = ? ORDER BY PlayerID")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.TurnOrderQuery, err = db.DB.Prepare("SELECT TurnOrder FROM PlayersInGame WHERE GameID = ? AND PlayerID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -133,6 +141,10 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.EndGameQuery, err = db.DB.Prepare("DELETE FROM Game WHERE ID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
     db.PlayerIsInGameQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE PlayerID = ? AND GameID = ?")
     if err != nil {
         log.Fatal(err)
@@ -145,6 +157,15 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.WinningCardQuery, err = db.DB.Prepare("SELECT BlackCardID FROM Round CROSS JOIN Game WHERE Game.ID = GameID AND CurrentRoundNumber - 1 = RoundNumber AND GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.PlayerScoresQuery, err = db.DB.Prepare("SELECT COUNT(RoundNumber) FROM Round RIGHT JOIN (SELECT PlayerID, GameID FROM PlayersInGame WHERE GameID = ?) AS Players ON Players.PlayerID = Round.WinnerID AND Round.GameID = Players.GameID GROUP BY Players.PlayerID ORDER BY Players.PlayerID")
+    if err != nil {
+        log.Fatal(err)
+    }
+
 }
 
 func (db * Database) Deinit() {
@@ -362,6 +383,24 @@ func (db *Database) InPlayPile(gameID uint32, playerCount uint32, answerCount ui
     return shuffleCards, multiInPlay, nil
 }
 
+func (db *Database) PlayerScores(gameID uint32) ([]uint32, error) {
+    rows, err := db.PlayerScoresQuery.Query(gameID)
+    if err != nil {
+        return []uint32{}, err
+    }
+    defer rows.Close()
+
+    var scores []uint32
+    for rows.Next() {
+        var score uint32
+        rows.Scan(&score)
+
+        scores = append(scores, score)
+    }
+
+    return scores, nil
+}
+
 func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
 
     var state GameState
@@ -370,8 +409,17 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     if err != nil {
         return GameState{}, err
     }
-
     state.CurrentBlackCard = cardID
+
+    // Find the previous winning card
+    var winningCardID uint32
+    err = db.WinningCardQuery.QueryRow(gameID).Scan(&winningCardID)
+    if err != nil {
+        winningCardID = 0
+    }
+    state.PreviousWinningCard = winningCardID
+
+    // Find cards in play
     answerCount, err := db.AnserCount(cardID)
     if err != nil {
         answerCount = 1
@@ -382,20 +430,31 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
         state.PlayerCount = 0
     }
 
-    state.CurrentJudge, err = db.CurrentJudge(gameID)
-    if err != nil {
-        state.CurrentJudge = 0
-    }
-
     state.InPlay, state.MultiInPlay, err = db.InPlayPile(gameID, state.PlayerCount, answerCount)
     if err != nil {
         state.InPlay = []uint32{}
     }
 
+    // Find judge
+    state.CurrentJudge, err = db.CurrentJudge(gameID)
+    if err != nil {
+        state.CurrentJudge = 0
+    }
+
+    // Find players
     state.Players, err = db.Players(gameID)
     if err != nil {
         state.Players = []string{}
     }
+
+    // Find scores
+    state.Scores, err = db.PlayerScores(gameID)
+
+    log.Println(state.PreviousWinningCard)
+    log.Println(state.Players)
+    log.Println(state.Scores)
+
+    state.End = false
 
     return state, nil
 }
@@ -482,9 +541,27 @@ func (db *Database) LookupPlayer(playerID uint32) (PlayerInfoMessage, error) {
     return player, nil
 }
 
+func (db *Database) TurnOrder(gameID uint32, playerID uint32) (uint32, error) {
+    var turnOrder uint32
+    err := db.TurnOrderQuery.QueryRow(gameID, playerID).Scan(&turnOrder)
+
+    if err != nil {
+        return 0, err
+    }
+
+    return turnOrder, nil
+}
+
 func (db* Database) PlayerJoin(playerID uint32, gameID uint32, turnOrder uint32) (error) {
 
     _, err := db.PlayerJoinQuery.Exec(playerID, gameID, turnOrder)
+
+    return err
+}
+
+func (db* Database) EndGame(gameID uint32) (error) {
+
+    _, err := db.EndGameQuery.Exec(gameID)
 
     return err
 }

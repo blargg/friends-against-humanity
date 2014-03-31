@@ -113,8 +113,76 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
     })
 }
 
+func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *http.Request) {
+    playerIDStr := request.FormValue("PlayerID")
+    playerID, err := strconv.ParseUint(playerIDStr, 10, 31)
+    if err != nil {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Invalid PlayerID",
+        })
+        return
+    }
+
+    player, err := srv.db.LookupPlayer(uint32(playerID))
+    if err == sql.ErrNoRows {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Player with ID Not Found",
+        })
+        return
+    }
+
+    playerAuthStr := request.FormValue("Auth")
+    auth, err := strconv.ParseUint(playerAuthStr, 10, 31)
+    if err != nil || uint32(auth) != player.PlayerAuthId {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Invalid Auth",
+        })
+        return
+    }
+
+    gameIDStr := request.FormValue("GameID")
+    gameID, err := strconv.ParseUint(gameIDStr, 10, 31)
+    if err != nil {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Invalid GameID",
+        })
+        return
+    }
+
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    turnOrder, err := srv.db.TurnOrder(uint32(gameID), uint32(playerID))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if turnOrder != 1 {
+        WriteResponse(writer, 400, OKMessage {
+            OK : false,
+            Message : "Player is not leader and cannot end the game.",
+        })
+        return
+    }
+
+    srv.Games[uint32(gameID)].EndGame(&srv.db) 
+    delete(srv.Games, uint32(gameID))
+
+    WriteResponse(writer, 400, OKMessage {
+        OK : true,
+        Message : "",
+    })
+
+}
+
 func (srv *Server) HandleLeaveGameRequest(writer http.ResponseWriter, request *http.Request) {
-    WriteResponse(writer, 200, LeaveGameMessage{
-        Success : true,
+    WriteResponse(writer, 400, OKMessage {
+        OK : false,
+        Message : "Unimplemented",
     })
 }

@@ -10,17 +10,21 @@ type GameState struct {
     CurrentBlackCard    uint32
     CurrentJudge        uint32
     PlayerCount         uint32
+    PreviousWinningCard uint32
 
     Players             []string
+    Scores              []uint32
     Hand                []uint32
     InPlay              []uint32
     MultiInPlay         [][]uint32
+    End                 bool
 }
 
 type Game struct {
     ID              uint32
     Name            string
     broadcasters    map[uint32]*Broadcaster
+    ending          bool
 }
 
 func NewGame(gameID uint32, gameName string) *Game {
@@ -28,6 +32,7 @@ func NewGame(gameID uint32, gameName string) *Game {
         ID: gameID,
         Name: gameName,
         broadcasters : make(map[uint32]*Broadcaster),
+        ending : false,
     }
 
     return g
@@ -45,6 +50,16 @@ func (game *Game) PlayerJoin(db* Database, playerID uint32) {
     }
 }
 
+func (game *Game) EndGame(db* Database) {
+    game.ending = true
+    game.BroadcastGameState(db)
+    for key, value := range game.broadcasters {
+        value.Kill()
+        delete(game.broadcasters, key)
+    }
+    db.EndGame(game.ID)
+}
+
 func (game *Game) PlayerConnect(playerID uint32, listenChannel chan GameState) {
     broadcaster, ok := game.broadcasters[playerID]
     if !ok {
@@ -57,6 +72,7 @@ func (game *Game) PlayerConnect(playerID uint32, listenChannel chan GameState) {
 func (game *Game) BroadcastGameState(db *Database) {
     for playerId, broadcaster := range game.broadcasters { 
         gameState, err := db.GameStateForPlayer(game.ID, playerId)
+        gameState.End = game.ending
         if err != nil {
             log.Fatal(err)
         }
@@ -66,6 +82,7 @@ func (game *Game) BroadcastGameState(db *Database) {
 
 func (game *Game) BroadcastGameStateToPlayer(db *Database, playerId uint32) {
     gameState, err := db.GameStateForPlayer(game.ID, playerId)
+    gameState.End = game.ending
     if err != nil {
         log.Fatal(err)
     }
