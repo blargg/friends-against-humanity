@@ -82,7 +82,7 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
         for {
 
             if err := websocket.JSON.Receive(ws, &msg); err != nil {
-                break
+                continue
             }
 
             log.Println(msg.MultiCardId)
