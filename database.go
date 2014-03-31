@@ -397,7 +397,7 @@ func (db* Database) IsPlayerInGame(playerID uint32, gameID uint32) (bool, error)
 
 func (db* Database) CreateGame(name string) (uint32, error) {
 
-    res, err := db.CreateGameQuery.Exec(name, 1)
+    res, err := db.CreateGameQuery.Exec(name, 459)
 
     lastInsert, err := res.LastInsertId()
 
