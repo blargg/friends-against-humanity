@@ -77,29 +77,46 @@ function CardController($scope, $http)
     $scope.selectGame = function(gameSession)
     {
         console.log('select game: ' + gameSession.Name + '( ' + gameSession.GameId + ' )');
-        $scope.gameSocket = new WebSocket('ws://127.0.0.1/' + 'GameState');
 
-        $scope.gameSocket.onopen = function(event) {
-            var connectData = {
-                'PlayerId': $scope.playerId,
-                'AuthToken': $scope.playerAuth,
-                'GameId': gameSession.GameId
-            };
-            $scope.gameSocket.send(JSON.stringify(connectData));
-        };
+        function()
+        {
+            $scope.gameSocket = new WebSocket('ws://127.0.0.1/' + 'GameState');
+            var intervalId;
 
-        $scope.gameSocket.onmessage = function(event) {
-            var data = JSON.parse(event.data);
-            $scope.game = {
-                'currentBlackCard':  data['CurrentBlackCard'],
-                'hand':  data['Hand'],
-                'judge': data['CurrentJudge'],
-                'inPlay': data['InPlay']
+            $scope.gameSocket.onopen = function(event) {
+                var connectData = {
+                    'PlayerId': $scope.playerId,
+                    'AuthToken': $scope.playerAuth,
+                    'GameId': gameSession.GameId
+                };
+                $scope.gameSocket.send(JSON.stringify(connectData));
+                intervalId = setInterval(function()
+                {
+                    $scope.gameSocket.send('ping');
+                }, 5000);
             };
-            console.log('GameState Message');
-            console.debug(data);
-            $scope.$digest();
-        };
+
+            $scope.gameSocket.onmessage = function(event) {
+                var data = JSON.parse(event.data);
+                $scope.game = {
+                    'currentBlackCard':  data['CurrentBlackCard'],
+                    'hand':  data['Hand'],
+                    'judge': data['CurrentJudge'],
+                    'inPlay': data['InPlay']
+                };
+                console.log('GameState Message');
+                console.debug(data);
+                $scope.$digest();
+            };
+
+            $scope.gameSocket.onclose = function()
+            {
+                console.log('GameState Closed');
+                clearInterval(intervalId);
+                delete $scope.gameSocket;
+            };
+
+        }();
     };
 
     $scope.getSelectableCards = function()
@@ -129,6 +146,7 @@ function CardController($scope, $http)
         {
             $scope.selectedCards.push(cardId);
             var numAnswers = $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
+            console.log('Number of Answers: ' + numAnswers);
             if ($scope.selectedCards.length > numAnswers)
             {
                 $scope.selectedCards.splice(0, 1);

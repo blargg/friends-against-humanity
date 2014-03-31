@@ -24,11 +24,9 @@
         </div>
         <div class="hand">
           <div class="game-controls">
-            <div class="btn-group">
-              <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
-              <button class="btn btn-primary" ng-click="submitSelection()" ng-show="isGameJudge()">Choose Winner</button>
-              <button class="btn btn-inverse" ng-click="clearSelection()">Clear</button>
-            </div>
+            <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
+            <button class="btn btn-primary" ng-click="submitSelection()" ng-show="isGameJudge()">Choose Winner</button>
+            <button class="btn btn-inverse" ng-click="clearSelection()">Clear</button>
             <div class="btn-group">
               <button class="btn btn-info dropdown-toggle" data-toggle="dropdown">Scores <span class="caret"></span></button>
               <ul class="dropdown-menu">
