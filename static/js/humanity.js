@@ -78,7 +78,7 @@ function CardController($scope, $http)
     {
         console.log('select game: ' + gameSession.Name + '( ' + gameSession.GameId + ' )');
 
-        function()
+        (function()
         {
             $scope.gameSocket = new WebSocket('ws://127.0.0.1/' + 'GameState');
             var intervalId;
@@ -116,7 +116,7 @@ function CardController($scope, $http)
                 delete $scope.gameSocket;
             };
 
-        }();
+        })();
     };
 
     $scope.getSelectableCards = function()
