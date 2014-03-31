@@ -5,15 +5,15 @@ import (
 )
 
 type GameState struct {
-    GameId          uint32
-    PlayerId          uint32
-    RoundNumber     uint32
-    CurrentBlackCard     uint32
-    CurrentJudge    uint32
-    PlayerCount     uint32
+    GameId              uint32
+    RoundNumber         uint32
+    CurrentBlackCard    uint32
+    CurrentJudge        uint32
+    PlayerCount         uint32
 
-    Hand        []uint32
-    InPlay        []uint32
+    Players             []string
+    Hand                []uint32
+    InPlay              []uint32
 }
 
 type Game struct {
@@ -71,8 +71,8 @@ func (game *Game) BroadcastGameStateToPlayer(db *Database, playerId uint32) {
     game.broadcasters[playerId].Broadcast(gameState)
 }
 
-func (game *Game) PlayCard(db *Database, playerID uint32, cardID uint32) {
-    db.PlayCard(cardID, game.ID, playerID)
+func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
+    db.PlayCards(cardID, game.ID, playerID)
     db.DrawCard(game.ID, playerID)
     game.BroadcastGameState(db)
 }

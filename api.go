@@ -18,8 +18,9 @@ type CreateGameMessage struct {
 }
 
 type GameInfo struct {
-    Name    string
-    GameId  uint32
+    Name        string
+    GameId      uint32
+    PlayerCount uint32
 }
 
 type AvailableGamesMessage struct {
@@ -93,7 +94,17 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
 
     gameInfos := []GameInfo{}
     for index := range games {
-        gameInfo := GameInfo { Name: games[index].Name, GameId: games[index].ID, }
+        playerCount, err := srv.db.PlayerCount(games[index].ID)
+        
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        gameInfo := GameInfo { 
+            Name: games[index].Name, 
+            GameId: games[index].ID, 
+            PlayerCount: playerCount,
+        }
         gameInfos = append(gameInfos, gameInfo)
     }
 

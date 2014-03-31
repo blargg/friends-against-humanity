@@ -21,6 +21,7 @@ type Database struct {
     NewRoundQuery           *sql.Stmt
     DrawWhiteCardQuery      *sql.Stmt
     DrawBlackCardQuery      *sql.Stmt
+    DrawFirstBlackCardQuery *sql.Stmt
     AuthenticationQuery     *sql.Stmt
     JudgeQuery              *sql.Stmt
     CardPlayedByQuery       *sql.Stmt
@@ -83,6 +84,10 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.DrawFirstBlackCardQuery, err = db.DB.Prepare("SELECT ID FROM BlackCard ORDER BY RAND()")
+    if err != nil {
+        log.Fatal(err)
+    }
     db.AuthenticationQuery, err = db.DB.Prepare("SELECT AuthToken FROM Player WHERE ID = ? AND AuthToken = ?")
     if err != nil {
         log.Fatal(err)
@@ -133,9 +138,11 @@ func (db * Database) Deinit() {
     db.DB.Close()
 }
 
-func (db *Database) PlayCard(cardID uint32, gameID uint32, playerID uint32) error {
+func (db *Database) PlayCards(cardID []uint32, gameID uint32, playerID uint32) error {
     state, err := db.GameStateNoPlayer(gameID)
-    _, err = db.PlayCardQuery.Exec(state.RoundNumber, cardID, playerID, gameID)
+    for index := range cardID {
+    _, err = db.PlayCardQuery.Exec(state.RoundNumber, cardID[index], playerID, gameID)
+    }
     return err
 }
 
@@ -160,6 +167,25 @@ func (db *Database) NewRound(gameID uint32) error {
 
 func (db *Database) DrawBlackCard(gameID uint32) (uint32, error) {
     rows, err := db.DrawBlackCardQuery.Query(gameID)
+    if err != nil {
+        return 0, err
+    }
+
+    if !rows.Next() {
+        return 0, errors.New("Black Deck Empty")
+    }
+
+    var cardID uint32
+    err = rows.Scan(&cardID)
+    if err != nil {
+        return 0, err
+    }
+
+    return cardID, nil
+}
+
+func (db *Database) DrawFirstBlackCard() (uint32, error) {
+    rows, err := db.DrawFirstBlackCardQuery.Query()
     if err != nil {
         return 0, err
     }
@@ -202,20 +228,29 @@ func (db *Database) PlayerCount(gameID uint32) (uint32, error) {
     return count, err
 }
 
-func (db *Database) Players(gameID uint32) ([]uint32, error) {
+func (db *Database) Players(gameID uint32) ([]string, error) {
     rows, err := db.PlayersQuery.Query(gameID)
     if err != nil {
         return nil, err
     }
 
-    var playerIDs []uint32
+    var playerNames []string
     for rows.Next() {
         var playerID uint32
         rows.Scan(&playerID)
-        playerIDs = append(playerIDs, playerID)
+        nameRows, err := db.LookupPlayerQuery.Query(playerID)
+        if !nameRows.Next() || err != nil {
+            continue
+        }
+
+        var playerName string
+        var auth uint32
+        nameRows.Scan(&playerID, &playerName, &auth)
+
+        playerNames = append(playerNames, playerName)
     }
 
-    return playerIDs, err
+    return playerNames, err
 }
 
 func (db *Database) AuthenticatePlayer(playerID uint32, playerAuth uint32) (bool, error) {
@@ -290,6 +325,11 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     state.InPlay, err = db.InPlayPile(gameID)
     if err != nil {
         state.InPlay = []uint32{}
+    }
+
+    state.Players, err = db.Players(gameID)
+    if err != nil {
+        state.Players = []string{}
     }
 
     return state, nil
@@ -397,7 +437,8 @@ func (db* Database) IsPlayerInGame(playerID uint32, gameID uint32) (bool, error)
 
 func (db* Database) CreateGame(name string) (uint32, error) {
 
-    res, err := db.CreateGameQuery.Exec(name, 1)
+    card, err := db.DrawFirstBlackCard()
+    res, err := db.CreateGameQuery.Exec(name, card)
 
     lastInsert, err := res.LastInsertId()
 
