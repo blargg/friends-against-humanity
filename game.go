@@ -95,6 +95,13 @@ func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
         log.Println("Player has already played a card.")
         return
     }
+    gameState, err := db.GameStateNoPlayer(game.ID)
+
+    answerCount, err := db.AnswerCount(gameState.CurrentBlackCard)
+    if err != nil || int(answerCount) != len(cardID) {
+        log.Println("Invalid cards played")
+        return
+    }
 
     db.PlayCards(cardID, game.ID, playerID)
     db.DrawCard(game.ID, playerID)

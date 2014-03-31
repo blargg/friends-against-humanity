@@ -199,7 +199,7 @@ func (db *Database) NewRound(gameID uint32) error {
     return err
 }
 
-func (db *Database) AnserCount(cardID uint32) (uint32, error) {
+func (db *Database) AnswerCount(cardID uint32) (uint32, error) {
     var count uint32
     err := db.AnswerCountQuery.QueryRow(cardID).Scan(&count)
     return count, err
@@ -420,7 +420,7 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     state.PreviousWinningCard = winningCardID
 
     // Find cards in play
-    answerCount, err := db.AnserCount(cardID)
+    answerCount, err := db.AnswerCount(cardID)
     if err != nil {
         answerCount = 1
     }
@@ -450,7 +450,6 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     // Find scores
     state.Scores, err = db.PlayerScores(gameID)
 
-    log.Println(state.PreviousWinningCard)
     log.Println(state.Players)
     log.Println(state.Scores)
 
