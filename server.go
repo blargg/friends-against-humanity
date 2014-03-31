@@ -74,7 +74,8 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
     listenChan := make(chan GameState, 1)
 
     var msg struct {
-        CardId      []uint32
+        CardId      uint32
+        MultiCardId []uint32
     }
 
     go func() {
@@ -84,11 +85,13 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
                 break
             }
 
+            log.Println(msg.MultiCardId)
+
             currentJudge, _ := srv.db.CurrentJudge(auth.GameId)
             if auth.PlayerId == currentJudge {
-                srv.Games[auth.GameId].PickWinningCard(&srv.db, msg.CardId[0])
+                srv.Games[auth.GameId].PickWinningCard(&srv.db, msg.CardId)
             } else {
-                srv.Games[auth.GameId].PlayCards(&srv.db, auth.PlayerId, msg.CardId)
+                srv.Games[auth.GameId].PlayCards(&srv.db, auth.PlayerId, msg.MultiCardId)
             }
 
         }

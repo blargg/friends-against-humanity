@@ -25,7 +25,8 @@
         <div class="hand">
           <div class="game-controls">
             <div class="btn-group">
-              <button class="btn btn-success" ng-click="submitSelection()">Submit</button>
+              <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
+              <button class="btn btn-primary" ng-click="submitSelection()" ng-show="isGameJudge()">Choose Winner</button>
               <button class="btn btn-inverse" ng-click="clearSelection()">Clear</button>
             </div>
             <div class="btn-group">
@@ -38,7 +39,7 @@
           </div>
           <div class="cards">
             <div class="card card-selectable"
-                 ng-repeat="card in game.hand track by $index"
+                 ng-repeat="card in getSelectableCards() track by $index"
                  ng-class="isCardSelected(card)"
                  ng-click="selectCard(card)"
                  title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}</div>

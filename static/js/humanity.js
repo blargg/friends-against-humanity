@@ -25,6 +25,8 @@ function CardController($scope, $http)
         success(function(data)
         {
             $scope.games = data['Games'];
+            console.log('Polled Games');
+            console.debug($scope.games);
         });
     };
     $scope.pollAvailableGames();
@@ -40,6 +42,8 @@ function CardController($scope, $http)
         $scope.playerId = data['PlayerId'];
         $scope.playerAuth = data['PlayerAuthId'];
         $scope.playerName = data['PlayerName'];
+        console.log('Created Player');
+        console.debug(data);
     });
 
     $scope.getPlayerInfo = function()
@@ -47,8 +51,8 @@ function CardController($scope, $http)
         $http.get(backendBase + 'PlayerInfo').
         success(function(data)
         {
-            console.log('playerinfo: ');
-            console.log(data);
+            console.log('Got Player Info');
+            console.debug(data);
             $scope.playerId = data['PlayerId'];
             $scope.playerAuth = data['PlayerAuthId'];
             $scope.playerName = data['PlayerName'];
@@ -65,6 +69,7 @@ function CardController($scope, $http)
         }).
         success(function(data)
         {
+            console.log('Added Game');
             $scope.pollAvailableGames();
         });
     };
@@ -88,13 +93,23 @@ function CardController($scope, $http)
             $scope.game = {
                 'currentBlackCard':  data['CurrentBlackCard'],
                 'hand':  data['Hand'],
-                'judge': data['CurrentJudge']
+                'judge': data['CurrentJudge'],
+                'inPlay': data['InPlay']
             };
-            console.log(data);
+            console.log('GameState Message');
+            console.debug(data);
             $scope.$digest();
         };
     };
 
+    $scope.getSelectableCards = function()
+    {
+        if ($scope.game)
+        {
+            return $scope.isGameJudge() ? $scope.game.inPlay : $scope.game.hand;
+        }
+        return [];
+    }
 
     $scope.isCardSelected = function(cardId)
     {
@@ -128,14 +143,24 @@ function CardController($scope, $http)
     $scope.submitSelection = function()
     {
         var connectData = {
-            'CardId': $scope.selectedCards[0]
+            'CardId': $scope.selectedCards[0],
+            'MultiCardId': $scope.selectedCards,
         };
         $scope.gameSocket.send(JSON.stringify(connectData));
-        console.log('submit selection: ' + $scope.selectedCards);
+        console.log('Submit Selection: ' + $scope.selectedCards);
     }
 
     $scope.clearSelection = function()
     {
         $scope.selectedCards = [];
+    }
+
+    $scope.isGameJudge = function()
+    {
+        if ($scope.game)
+        {
+            return $scope.playerId == $scope.game.judge;
+        }
+        return false;
     }
 };
