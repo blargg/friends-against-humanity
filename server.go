@@ -89,7 +89,7 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
 
             currentJudge, _ := srv.db.CurrentJudge(auth.GameId)
             if auth.PlayerId == currentJudge {
-                srv.Games[auth.GameId].PickWinningCard(&srv.db, msg.CardId)
+                srv.Games[auth.GameId].PickWinningCard(&srv.db, msg.MultiCardId)
             } else {
                 srv.Games[auth.GameId].PlayCards(&srv.db, auth.PlayerId, msg.MultiCardId)
             }

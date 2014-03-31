@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: FriendsAgainstHumanity
+-- Host: 127.0.0.1    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -31,7 +31,7 @@ CREATE TABLE `Game` (
   `CurrentBlackCard` varchar(45) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `ID_UNIQUE` (`ID`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=38 DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `Game` (
 
 LOCK TABLES `Game` WRITE;
 /*!40000 ALTER TABLE `Game` DISABLE KEYS */;
-INSERT INTO `Game` VALUES (1,'TESTGAME',2,'2'),(2,'The Weyland-Yutani Research Facility above Bernadette',1,'1'),(3,'The ruins of the Beijing Arcology',1,'1'),(4,'The Crystalline Sea of Hada',1,'1');
+INSERT INTO `Game` VALUES (19,'The City of Jiangyi on Bernadette',2,'478'),(20,'The Weyland-Yutani Research Facility above Bernadette',1,'497'),(21,'The Town of Wise\'s Canyon on Perth',1,'529'),(22,'The City of Jiangyi on Bernadette',2,'483'),(23,'The Ghost Town of New Amarillo on Kerry',1,'503'),(24,'The Censoft Arcology in Yokohama',1,'544'),(25,'The Weyland-Yutani Research Facility above Bernadette',4,'528'),(26,'The Manchester Industrial Area',1,'467'),(27,'The Dynlink Autofactory in Perth',3,'467'),(28,'The Banker Mine on Athens',1,'466'),(29,'The ruins of the Chicago Arcology',3,'472'),(30,'The Crystalline City of Byni',1,'525'),(31,'The ruins of the Chicago Arcology',1,'509'),(32,'The ruins of the Moneaux Research Facility in Baikonur',1,'545'),(33,'The City of Benja on Mala',1,'463'),(34,'The ruins of the Beijing Arcology',2,'537'),(35,'The Town of Wise\'s Canyon on Perth',1,'511'),(36,'The ruins of the Moneaux Research Facility in Baikonur',1,'507'),(37,'The Frozen Moon of Beri VII',2,'489');
 /*!40000 ALTER TABLE `Game` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-27 21:48:15
+-- Dump completed on 2014-03-31 14:09:46

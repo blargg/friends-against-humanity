@@ -2,7 +2,7 @@ CREATE DATABASE  IF NOT EXISTS `FriendsAgainstHumanity` /*!40100 DEFAULT CHARACT
 USE `FriendsAgainstHumanity`;
 -- MySQL dump 10.14  Distrib 5.5.36-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: FriendsAgainstHumanity
+-- Host: 127.0.0.1    Database: FriendsAgainstHumanity
 -- ------------------------------------------------------
 -- Server version	5.5.36-MariaDB-log
 
@@ -38,7 +38,7 @@ CREATE TABLE `Round` (
 
 LOCK TABLES `Round` WRITE;
 /*!40000 ALTER TABLE `Round` DISABLE KEYS */;
-INSERT INTO `Round` VALUES (4,1,1,'1'),(5,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(2,1,1,'1'),(3,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(1,1,1,'1');
+INSERT INTO `Round` VALUES (4,1,1,'1'),(5,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(2,1,1,'1'),(3,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(1,1,1,'1'),(1,6,5,'299'),(2,6,5,'426'),(3,6,5,'80'),(1,11,5,'315'),(4,6,5,'299'),(5,6,7,'76'),(1,13,6,'457'),(2,13,7,'246'),(3,13,6,'353'),(1,14,12,'151'),(1,10,13,'151'),(1,12,16,'320'),(1,8,16,'296'),(1,17,18,'279'),(1,18,20,'89'),(1,19,25,'203'),(1,22,33,'98'),(1,25,39,'76'),(2,25,40,'394'),(3,25,38,'352'),(1,27,43,'274'),(2,27,42,'326'),(1,29,55,'443'),(2,29,51,'53'),(1,34,71,'117'),(1,37,77,'195');
 /*!40000 ALTER TABLE `Round` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -51,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2014-03-27 21:48:15
+-- Dump completed on 2014-03-31 14:09:46

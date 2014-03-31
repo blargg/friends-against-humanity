@@ -14,6 +14,7 @@ type GameState struct {
     Players             []string
     Hand                []uint32
     InPlay              []uint32
+    MultiInPlay         [][]uint32
 }
 
 type Game struct {
@@ -77,12 +78,29 @@ func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
     game.BroadcastGameState(db)
 }
 
-func (game *Game) PickWinningCard(db *Database, cardID uint32) {
-    playerID, err := db.CardPlayedBy(game.ID, cardID)
+func (game *Game) PickWinningCard(db *Database, cardID []uint32) {
+    if cardID == nil || len(cardID) == 0 {
+        return
+    }
+
+    playerID, err := db.CardPlayedBy(game.ID, cardID[0])
     if err != nil {
         log.Fatal(err)
     }
-    game.PickWinner(db, playerID, cardID)
+
+    for index := range cardID {
+        playerIDComp, err := db.CardPlayedBy(game.ID, cardID[index])
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        if playerIDComp != playerID {
+            log.Println("Invalid winning cards")
+            return
+        }
+    }
+
+    game.PickWinner(db, playerID, cardID[0])
 }
 
 func (game *Game) PickWinner(db *Database, playerID uint32, cardID uint32) {
