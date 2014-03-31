@@ -36,6 +36,7 @@ type Database struct {
     PlayerIsInGameQuery     *sql.Stmt
     CreateGameQuery         *sql.Stmt
     AnswerCountQuery        *sql.Stmt
+    HasPlayedCardQuery      *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -101,6 +102,10 @@ func (db *Database)Init() {
         log.Fatal(err)
     }
     db.CardPlayedByQuery, err = db.DB.Prepare("SELECT PlayerID FROM CardInHand WHERE GameID = ? AND CardID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.HasPlayedCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand CROSS JOIN Game WHERE RoundPlayed = Game.CurrentRoundNumber AND GameID = ? AND Game.ID = GameID AND PlayerID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -306,6 +311,16 @@ func (db *Database) CardPlayedBy(gameID uint32, cardID uint32) (uint32, error) {
     return playerID, nil
 }
 
+func (db *Database) HasPlayedCard(gameID uint32, playerID uint32) (bool, error) {
+    var cardID uint32
+    err := db.HasPlayedCardQuery.QueryRow(gameID, playerID).Scan(&cardID)
+    if err != nil {
+        return false, nil
+    }
+
+    return true, nil
+}
+
 func (db *Database) InPlayPile(gameID uint32, playerCount uint32, answerCount uint32) ([]uint32, [][]uint32, error) {
     if playerCount <= 1 {
         return []uint32{}, [][]uint32{}, nil
@@ -376,8 +391,6 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     if err != nil {
         state.InPlay = []uint32{}
     }
-
-    log.Println(state.MultiInPlay)
 
     state.Players, err = db.Players(gameID)
     if err != nil {

@@ -73,6 +73,12 @@ func (game *Game) BroadcastGameStateToPlayer(db *Database, playerId uint32) {
 }
 
 func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
+    alreadyPlayed, err := db.HasPlayedCard(game.ID, playerID) 
+    if alreadyPlayed || err != nil {
+        log.Println("Player has already played a card.")
+        return
+    }
+
     db.PlayCards(cardID, game.ID, playerID)
     db.DrawCard(game.ID, playerID)
     game.BroadcastGameState(db)

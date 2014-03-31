@@ -36,6 +36,7 @@ type OKMessage struct {
 
 func WriteResponse(w http.ResponseWriter, status int, v interface{}) {
     w.Header().Add("Content-Type", "application/json")
+    w.Header().Set("Access-Control-Allow-Origin", "*")
     w.WriteHeader(status)
     wj := json.NewEncoder(w)
     wj.Encode(v)
@@ -84,8 +85,6 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
             if err := websocket.JSON.Receive(ws, &msg); err != nil {
                 continue
             }
-
-            log.Println(msg.MultiCardId)
 
             currentJudge, _ := srv.db.CurrentJudge(auth.GameId)
             if auth.PlayerId == currentJudge {
