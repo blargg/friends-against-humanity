@@ -2,6 +2,6 @@ package main
 
 func main() {
     var srv Server
-    srv.Addr = ":8080"
+    srv.Addr = ":80"
     srv.RunServer()
 }

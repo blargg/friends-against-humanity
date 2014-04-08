@@ -35,6 +35,7 @@ type OKMessage struct {
 
 func WriteResponse(w http.ResponseWriter, status int, v interface{}) {
     w.Header().Add("Content-Type", "application/json")
+    w.Header().Set("Access-Control-Allow-Origin", "*")
     w.WriteHeader(status)
     wj := json.NewEncoder(w)
     wj.Encode(v)

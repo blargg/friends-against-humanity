@@ -138,7 +138,7 @@ func (game *Game) PickWinner(db *Database, playerID uint32, cardID uint32) {
     if err != nil {
         log.Fatal(err)
     }
-    db.RecordRound(state.RoundNumber, playerID, cardID, game.ID)
+    db.RecordRound(state.RoundNumber, playerID, state.CurrentBlackCard, game.ID)
     db.NewRound(game.ID)
     game.BroadcastGameState(db)
 }
