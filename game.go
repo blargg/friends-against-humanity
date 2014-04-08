@@ -104,7 +104,9 @@ func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
     }
 
     db.PlayCards(cardID, game.ID, playerID)
-    db.DrawCard(game.ID, playerID)
+    for i := uint32(0); i < answerCount; i++ {
+        db.DrawCard(game.ID, playerID)
+    }
     game.BroadcastGameState(db)
 }
 
