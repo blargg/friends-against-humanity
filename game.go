@@ -118,18 +118,6 @@ func (game *Game) PickWinningCard(db *Database, cardID []uint32) {
         log.Fatal(err)
     }
 
-    for index := range cardID {
-        playerIDComp, err := db.CardPlayedBy(game.ID, cardID[index])
-        if err != nil {
-            log.Fatal(err)
-        }
-
-        if playerIDComp != playerID {
-            log.Println("Invalid winning cards")
-            return
-        }
-    }
-
     game.PickWinner(db, playerID, cardID[0])
 }
 
