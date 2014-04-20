@@ -51,6 +51,17 @@ func (game *Game) PlayerJoin(db* Database, playerID uint32) {
     }
 }
 
+func (game *Game) AIJoin(db *Database) {
+    playerID, _ := db.AIJoin(game.ID)
+    for i := 0; i < 10; i++ {
+        db.DrawCard(game.ID, playerID)
+    }
+}
+
+func (game *Game) AIPlayRound(db *Database) {
+    db.AIPlayRound(game.ID)
+}
+
 func (game *Game) EndGame(db* Database) {
     game.ending = true
     game.BroadcastGameState(db)
@@ -101,23 +112,7 @@ func (game *Game) BroadcastGameStateToPlayer(db *Database, playerId uint32) {
 }
 
 func (game *Game) PlayCards(db *Database, playerID uint32, cardID []uint32) {
-    alreadyPlayed, err := db.HasPlayedCard(game.ID, playerID) 
-    if alreadyPlayed || err != nil {
-        log.Println("Player has already played a card.")
-        return
-    }
-    gameState, err := db.GameStateNoPlayer(game.ID)
-
-    answerCount, err := db.AnswerCount(gameState.CurrentBlackCard)
-    if err != nil || int(answerCount) != len(cardID) {
-        log.Println("Invalid cards played")
-        return
-    }
-
-    db.PlayCards(cardID, game.ID, playerID)
-    for i := uint32(0); i < answerCount; i++ {
-        db.DrawCard(game.ID, playerID)
-    }
+    db.PlayCardsCheck(game.ID, playerID, cardID)
     game.BroadcastGameState(db)
 }
 
@@ -142,25 +137,4 @@ func (game *Game) PickWinner(db *Database, playerID uint32, cardID uint32) {
     db.RecordRound(state.RoundNumber, playerID, state.CurrentBlackCard, game.ID)
     db.NewRound(game.ID)
     game.BroadcastGameState(db)
-}
-
-func aiChooseCard(cardIDs []uint32, answercount uint32) []uint32 {
-    return cardIDs[:answercount]
-}
-
-func (game *Game) AIPlayRound(db *Database) {
-    players, err := db.GetAIPlayers(game.ID)
-    if err != nil {
-        log.Println("AIPlayRound")
-    }
-    for _, playerID := range players {
-        gamestate, err := db.GameStateForPlayer(game.ID, playerID)
-        if err != nil {
-            log.Println("AIPlayRound")
-        }
-        cards := gamestate.Hand
-        ansCount, err := db.AnswerCount(gamestate.CurrentBlackCard)
-        cardsToPlay := aiChooseCard(cards, ansCount)
-        game.PlayCards(db, playerID, cardsToPlay)
-    }
 }

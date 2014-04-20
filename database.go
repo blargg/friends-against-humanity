@@ -7,9 +7,9 @@ import (
     "math/big"
     "math/rand"
     _ "github.com/go-sql-driver/mysql"
+    cryptoRand "crypto/rand"
 )
 
-import cryptoRand "crypto/rand"
 
 type Database struct {
     DB                      *sql.DB
@@ -35,6 +35,7 @@ type Database struct {
     PlayerJoinQuery         *sql.Stmt
     PlayerIsInGameQuery     *sql.Stmt
     GetAIPlayerInGameQuery  *sql.Stmt
+    AINotInGameQuery        *sql.Stmt
     CreateGameQuery         *sql.Stmt
     AnswerCountQuery        *sql.Stmt
     HasPlayedCardQuery      *sql.Stmt
@@ -153,6 +154,10 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+    db.AINotInGameQuery, err = db.DB.Prepare("SELECT ID FROM AI_Players WHERE (ID) NOT IN (SELECT PlayerID as ID FROM PlayersInGame WHERE GameID = ?)")
+    if err != nil {
+        log.Fatal(err)
+    }
     db.CreateGameQuery, err = db.DB.Prepare("INSERT INTO Game (Name, CurrentRoundNumber, CurrentBlackCard) VALUES (?, 1, ?)")
     if err != nil {
         log.Fatal(err)
@@ -182,6 +187,26 @@ func (db *Database) PlayCards(cardID []uint32, gameID uint32, playerID uint32) e
     _, err = db.PlayCardQuery.Exec(state.RoundNumber, index, cardID[index], playerID, gameID)
     }
     return err
+}
+
+func (db *Database) PlayCardsCheck(gameID uint32, playerID uint32, cardID []uint32) {
+    alreadyPlayed, err := db.HasPlayedCard(gameID, playerID)
+    if alreadyPlayed || err != nil {
+        log.Println("Player has already played a card.")
+        return
+    }
+    gameState, err := db.GameStateNoPlayer(gameID)
+
+    answerCount, err := db.AnswerCount(gameState.CurrentBlackCard)
+    if err != nil || int(answerCount) != len(cardID) {
+        log.Println("Invalid cards played")
+        return
+    }
+
+    db.PlayCards(cardID, gameID, playerID)
+    for i := uint32(0); i < answerCount; i++ {
+        db.DrawCard(gameID, playerID)
+    }
 }
 
 func (db *Database) DrawCard(gameID uint32, playerID uint32) error {
@@ -565,6 +590,29 @@ func (db* Database) PlayerJoin(playerID uint32, gameID uint32, turnOrder uint32)
     return err
 }
 
+func (db *Database) NewAIForGame(gameID uint32) (uint32, error) {
+    rows, err := db.AINotInGameQuery.Query(gameID)
+    if err == sql.ErrNoRows {
+        log.Println("no more ai players")
+        return 0, err
+    }
+    rows.Next()
+    var playerID uint32
+    err = rows.Scan(&playerID)
+    return playerID, err
+}
+
+// adds the next ai not yet joined with a 0 turn order
+func (db *Database) AIJoin(gameID uint32) (uint32, error) {
+    playerID, err := db.NewAIForGame(gameID)
+    if err != nil {
+        log.Println("Could not get new AI")
+        return playerID, err
+    }
+    err = db.PlayerJoin(playerID, gameID, 0)
+    return playerID, err
+}
+
 func (db* Database) EndGame(gameID uint32) (error) {
 
     _, err := db.EndGameQuery.Exec(gameID)
@@ -615,4 +663,25 @@ func (db* Database) CreateGame(name string) (uint32, error) {
     lastInsert, err := res.LastInsertId()
 
     return uint32(lastInsert), err
+}
+
+func aiChooseCard(cardIDs []uint32, answercount uint32) []uint32 {
+    return cardIDs[:answercount]
+}
+
+func (db *Database) AIPlayRound(gameID uint32) {
+    players, err := db.GetAIPlayers(gameID)
+    if err != nil {
+        log.Println("AIPlayRound")
+    }
+    for _, playerID := range players {
+        gamestate, err := db.GameStateForPlayer(gameID, playerID)
+        if err != nil {
+            log.Println("AIPlayRound")
+        }
+        cards := gamestate.Hand
+        ansCount, err := db.AnswerCount(gamestate.CurrentBlackCard)
+        cardsToPlay := aiChooseCard(cards, ansCount)
+        db.PlayCardsCheck(gameID, playerID, cardsToPlay)
+    }
 }
