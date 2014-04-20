@@ -86,6 +86,7 @@ func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *
     game := NewGame(gameId, gameName)
     srv.Games[gameId] = game
 
+    writer.Header().Set("Access-Control-Allow-Origin", "*")
     WriteResponse(writer, 200, CreateGameMessage{ GameId : gameId, })
 }
 
