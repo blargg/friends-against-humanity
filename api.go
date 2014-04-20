@@ -83,6 +83,9 @@ func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *
         log.Fatal(err)
     }
 
+    game := NewGame(gameId, gameName)
+    srv.Games[gameId] = game
+
     WriteResponse(writer, 200, CreateGameMessage{ GameId : gameId, })
 }
 

@@ -149,7 +149,6 @@ func (srv *Server) HandlePOST(w http.ResponseWriter, rq *http.Request) {
     switch id {
         case ENDPOINT_CREATE_GAME:
             srv.HandleCreateGameRequest(w, rq)
-            srv.InitGames()
         case ENDPOINT_LEAVE_GAME:
             srv.HandleLeaveGameRequest(w, rq)
         case ENDPOINT_END_GAME:
