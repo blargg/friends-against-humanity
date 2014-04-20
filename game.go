@@ -143,3 +143,24 @@ func (game *Game) PickWinner(db *Database, playerID uint32, cardID uint32) {
     db.NewRound(game.ID)
     game.BroadcastGameState(db)
 }
+
+func aiChooseCard(cardIDs []uint32, answercount uint32) []uint32 {
+    return cardIDs[:answercount]
+}
+
+func (game *Game) AIPlayRound(db *Database) {
+    players, err := db.GetAIPlayers(game.ID)
+    if err != nil {
+        log.Println("AIPlayRound")
+    }
+    for _, playerID := range players {
+        gamestate, err := db.GameStateForPlayer(game.ID, playerID)
+        if err != nil {
+            log.Println("AIPlayRound")
+        }
+        cards := gamestate.Hand
+        ansCount, err := db.AnswerCount(gamestate.CurrentBlackCard)
+        cardsToPlay := aiChooseCard(cards, ansCount)
+        game.PlayCards(db, playerID, cardsToPlay)
+    }
+}

@@ -34,6 +34,7 @@ type Database struct {
     LookupPlayerByAuthQuery *sql.Stmt
     PlayerJoinQuery         *sql.Stmt
     PlayerIsInGameQuery     *sql.Stmt
+    GetAIPlayerInGameQuery  *sql.Stmt
     CreateGameQuery         *sql.Stmt
     AnswerCountQuery        *sql.Stmt
     HasPlayedCardQuery      *sql.Stmt
@@ -145,6 +146,10 @@ func (db *Database)Init() {
         log.Fatal(err)
     }
     db.PlayerIsInGameQuery, err = db.DB.Prepare("SELECT PlayerID FROM PlayersInGame WHERE PlayerID = ? AND GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.GetAIPlayerInGameQuery, err = db.DB.Prepare("SELECT PlayerID FROM AI_Players JOIN PlayersInGame ON PlayerID = ID WHERE GameID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -578,6 +583,28 @@ func (db* Database) IsPlayerInGame(playerID uint32, gameID uint32) (bool, error)
     }
 
     return true, err
+}
+
+func (db* Database) GetAIPlayers(gameID uint32) ([]uint32, error) {
+    aiPlayers := make([]uint32, 0)
+    rows, err := db.GetAIPlayerInGameQuery.Query(gameID)
+    if err != nil {
+        return aiPlayers, err
+    }
+
+    for rows.Next() {
+        var curID uint32
+        if err = rows.Scan(&curID); err != nil {
+            return aiPlayers, err
+        }
+        aiPlayers = append(aiPlayers, curID)
+    }
+    if err = rows.Err(); err != nil {
+        log.Print("GetAIPlayers: ")
+        log.Println(err)
+        return aiPlayers, err
+    }
+    return aiPlayers, err
 }
 
 func (db* Database) CreateGame(name string) (uint32, error) {
