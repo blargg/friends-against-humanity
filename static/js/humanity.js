@@ -9,7 +9,9 @@ function getRandom(a)
 
 function CardController($scope, $http)
 {
-    var backendBase = 'http://127.0.0.1/'
+    //var backendHost = 'zach297.com:8080'
+    var backendHost = '127.0.0.1:8080'
+    var backendBase = 'http://' + backendHost + '/'
     $scope.cards = masterCards;
     $scope.games = [];
     $scope.game = undefined;
@@ -80,7 +82,7 @@ function CardController($scope, $http)
 
         (function()
         {
-            $scope.gameSocket = new WebSocket('ws://127.0.0.1/' + 'GameState');
+            $scope.gameSocket = new WebSocket('ws://' + backendHost + '/GameState');
             var intervalId;
 
             $scope.gameSocket.onopen = function(event) {
@@ -102,7 +104,7 @@ function CardController($scope, $http)
                     'currentBlackCard':  data['CurrentBlackCard'],
                     'hand':  data['Hand'],
                     'judge': data['CurrentJudge'],
-                    'inPlay': data['InPlay']
+                    'inPlay': data['MultiInPlay']
                 };
                 console.log('GameState Message');
                 console.debug(data);
@@ -145,7 +147,7 @@ function CardController($scope, $http)
         if (selectionIndex == -1)
         {
             $scope.selectedCards.push(cardId);
-            var numAnswers = $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
+            var numAnswers = $scope.isGameJudge() ? 1 : $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
             console.log('Number of Answers: ' + numAnswers);
             if ($scope.selectedCards.length > numAnswers)
             {
@@ -161,11 +163,21 @@ function CardController($scope, $http)
     $scope.submitSelection = function()
     {
         var connectData = {
-            'CardId': $scope.selectedCards[0],
             'MultiCardId': $scope.selectedCards,
         };
         $scope.gameSocket.send(JSON.stringify(connectData));
+        $scope.clearSelection();
         console.log('Submit Selection: ' + $scope.selectedCards);
+    }
+
+    $scope.judgeCard = function()
+    {
+        var connectData = {
+            'MultiCardId': $scope.selectedCards[0],
+        };
+        $scope.gameSocket.send(JSON.stringify(connectData));
+        $scope.clearSelection();
+        console.log('Judgement: ' + $scope.selectedCards);
     }
 
     $scope.clearSelection = function()

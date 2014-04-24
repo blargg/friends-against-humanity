@@ -25,7 +25,7 @@
         <div class="hand">
           <div class="game-controls">
             <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
-            <button class="btn btn-primary" ng-click="submitSelection()" ng-show="isGameJudge()">Choose Winner</button>
+            <button class="btn btn-primary" ng-click="judgeCard()" ng-show="isGameJudge()">Choose Winner</button>
             <button class="btn btn-inverse" ng-click="clearSelection()">Clear</button>
             <div class="btn-group">
               <button class="btn btn-info dropdown-toggle" data-toggle="dropdown">Scores <span class="caret"></span></button>
@@ -37,10 +37,18 @@
           </div>
           <div class="cards">
             <div class="card card-selectable"
-                 ng-repeat="card in getSelectableCards() track by $index"
+                 ng-if="!isGameJudge()"
+                 ng-repeat="card in game.hand track by $index"
                  ng-class="isCardSelected(card)"
                  ng-click="selectCard(card)"
                  title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}</div>
+            <div class="card card-selectable"
+                 ng-if="isGameJudge()"
+                 ng-repeat="cardStack in game.inPlay track by $index"
+                 ng-class="isCardSelected(cardStack)"
+                 ng-click="selectCard(cardStack)">
+              <span ng-repeat="card in cardStack" title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}<br /></span>
+            </div>
           </div>
         </div>
         <div class="round">
