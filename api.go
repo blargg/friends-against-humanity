@@ -91,14 +91,19 @@ func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *
 }
 
 func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, request *http.Request) {
+    
+    log.Println("Starting Get Games")
     games, err := srv.db.GetGames()
+    log.Println("Got Games")
     if err != nil {
         log.Fatal(err)
     }
 
     gameInfos := []GameInfo{}
     for index := range games {
+        log.Println("Getting playerCount for game ", games[index].Name)
         playerCount, err := srv.db.PlayerCount(games[index].ID)
+        log.Println("Got playerCount for game ", games[index].Name)
         
         if err != nil {
             log.Fatal(err)
@@ -112,9 +117,11 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
         gameInfos = append(gameInfos, gameInfo)
     }
 
+    log.Println("Writing response")
     WriteResponse(writer, 200, AvailableGamesMessage{
         Games : gameInfos,
     })
+    log.Println("Response written")
 }
 
 func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *http.Request) {
