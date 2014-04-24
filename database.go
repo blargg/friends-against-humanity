@@ -13,9 +13,12 @@ import (
 
 type Database struct {
     DB                      *sql.DB
+    LabelsQuery             *sql.Stmt
+    LabelWeightsQuery       *sql.Stmt
     GameStateQuery          *sql.Stmt
     PlayerHandQuery         *sql.Stmt
     PlayerCountQuery        *sql.Stmt
+    TurnCountQuery          *sql.Stmt
     PlayersQuery            *sql.Stmt
     PlayCardQuery           *sql.Stmt
     UpdateHandQuery         *sql.Stmt
@@ -54,11 +57,23 @@ func (db *Database)Init() {
         log.Fatal(err)
     }
 
+    db.LabelsQuery, err = db.DB.Prepare("SELECT label FROM Labels WHERE ID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.LabelWeightsQuery, err = db.DB.Prepare("SELECT label, weight FROM LabelWeights WHERE BlackCardID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
     db.GameStateQuery, err = db.DB.Prepare("SELECT ID, CurrentRoundNumber, CurrentBlackCard FROM Game WHERE ID = ?")
     if err != nil {
         log.Fatal(err)
     }
     db.PlayerCountQuery, err = db.DB.Prepare("SELECT PlayerCount FROM PlayerCount WHERE GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.TurnCountQuery, err = db.DB.Prepare("SELECT HighestTurnOrder FROM MaxTurnOrder WHERE GameID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -300,6 +315,12 @@ func (db *Database) PlayerCount(gameID uint32) (uint32, error) {
     return count, err
 }
 
+func (db *Database) TurnCount(gameID uint32) (uint32, error) {
+    var count uint32
+    err := db.TurnCountQuery.QueryRow(gameID).Scan(&count)
+    return count, err
+}
+
 func (db *Database) Players(gameID uint32) ([]string, error) {
     rows, err := db.PlayersQuery.Query(gameID)
     defer rows.Close();
@@ -462,6 +483,11 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
         state.PlayerCount = 0
     }
 
+    state.TurnCount, err = db.TurnCount(gameID)
+    if err != nil {
+        state.TurnCount = 0
+    }
+
     state.InPlay, state.MultiInPlay, err = db.InPlayPile(gameID, state.PlayerCount, answerCount)
     if err != nil {
         state.InPlay = []uint32{}
@@ -470,6 +496,7 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     // Find judge
     state.CurrentJudge, err = db.CurrentJudge(gameID)
     if err != nil {
+        log.Printf("in game %d, could not find judge\n")
         state.CurrentJudge = 0
     }
 
@@ -663,6 +690,44 @@ func (db* Database) CreateGame(name string) (uint32, error) {
     lastInsert, err := res.LastInsertId()
 
     return uint32(lastInsert), err
+}
+
+func (db *Database) GetWhiteLabels(whiteCardID uint32) map[string]bool {
+    labels := make(map[string]bool)
+    rows, err := db.LabelsQuery.Query(whiteCardID)
+    for rows.Next() {
+        var label string
+        if err = rows.Scan(&label); err != nil {
+            log.Println("GetWhiteLabels err")
+        }
+        labels[label] = true
+    }
+    return labels
+}
+
+func (db *Database) CardWeight(blackCard uint32, whiteCard uint32) float32 {
+    total := float32(1.0)
+    labels := db.GetWhiteLabels(whiteCard)
+    rows, err := db.LabelWeightsQuery.Query(blackCard)
+    if err != nil {
+        log.Println("LabelWeightsQuery err")
+    }
+    for rows.Next() {
+        var blabel string
+        var weight float32
+        if err = rows.Scan(&blabel, &weight); err != nil {
+            log.Println("scanning black label weights")
+        }
+        log.Printf("label = %s, weight = %f\n", blabel, weight)
+        _, exists := labels[blabel]
+        if exists {
+            total *= weight
+        } else {
+            total *= (1 - weight)
+        }
+    }
+
+    return total
 }
 
 func aiChooseCard(cardIDs []uint32, answercount uint32) []uint32 {

@@ -11,8 +11,10 @@ type GameState struct {
     CurrentJudge        uint32
     PlayerCount         uint32
     TurnOrder           uint32
-    
+    TurnCount           uint32
+
     WinningCards        []uint32
+
     Players             []string
     Scores              []uint32
     Hand                []uint32
@@ -45,7 +47,7 @@ func (game *Game) PlayerJoin(db* Database, playerID uint32) {
         log.Fatal(err)
     }
 
-    db.PlayerJoin(playerID, game.ID, state.PlayerCount + 1)
+    db.PlayerJoin(playerID, game.ID, state.TurnCount + 1)
     for i := 0; i < 10; i++ {
         db.DrawCard(game.ID, playerID)
     }
@@ -56,10 +58,12 @@ func (game *Game) AIJoin(db *Database) {
     for i := 0; i < 10; i++ {
         db.DrawCard(game.ID, playerID)
     }
+    game.AIPlayRound(db)
 }
 
 func (game *Game) AIPlayRound(db *Database) {
     db.AIPlayRound(game.ID)
+    game.BroadcastGameState(db)
 }
 
 func (game *Game) EndGame(db* Database) {
@@ -136,5 +140,6 @@ func (game *Game) PickWinner(db *Database, playerID uint32, cardID uint32) {
     }
     db.RecordRound(state.RoundNumber, playerID, state.CurrentBlackCard, game.ID)
     db.NewRound(game.ID)
+    go game.AIPlayRound(db)
     game.BroadcastGameState(db)
 }
