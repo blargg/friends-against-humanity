@@ -11,10 +11,19 @@
       <link href="css/bootflat-square.css" rel="stylesheet" media="screen">
       <link href="css/style.css" rel="stylesheet" media="screen">
     </head>
-    <body>
-      <div class="main-container" ng-app ng-controller="CardController">
+    <body ng-app="HumanityApp" ng-controller="CardController">
+      <dialog show="showSettingsDialog">
+        <h1>Settings</h1>
+        <form ng-submit="formName = ''; hideSettings(); changeName(formName);">
+          <input name="name" ng-model="formName" placeholder="Name" />
+          <button type="submit" class="btn btn-primary" title="Change Name">Change Name</button>
+        </form>
+        <button class="btn btn-primary" ng-click="hideSettings(); makePlayer()">New Player ID</button>
+      </dialog>
+      <div class="main-container">
         <div class="sidebar">
           <ul class="game-session">
+            <li style="text-align: center" ng-click="showSettings()"><i class="fa fa-gear"></i></li>
             <li style="text-align: center" ng-click="addGame()"><i class="fa fa-plus"></i></li>
             <li ng-repeat="game in games track by $index" ng-click="selectGame(game)" title="{{ game.name }}">
               <span class="game-session-players">{{ game.PlayerCount || 0 }}/{{ game.PlayerCapacity || "&infin;" }}</span>

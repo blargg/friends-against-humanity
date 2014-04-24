@@ -7,11 +7,38 @@ function getRandom(a)
     return a[Math.floor(Math.random() * a.length)];
 }
 
-function CardController($scope, $http)
+angular.module('HumanityApp', [])
+.directive('dialog', function()
+{
+    return {
+        restrict: 'E',
+        scope:
+        {
+            show: '='
+        },
+        replace: true,
+        transclude: true,
+        link: function(scope, element, attrs)
+        {
+            scope.hideDialog = function()
+            {
+                console.log("hiding");
+                scope.show = false;
+            };
+        },
+        template: '<div class="dialog" ng-show="show"><div class="dialog-container"><div class="content" ng-transclude></div><button class="btn btn-danger" style="float: right" ng-click="hideDialog()">Close</button></div></div>'
+    };
+})
+.controller('CardController', ['$scope', '$http', '$interval', function($scope, $http, $interval)
 {
     //var backendHost = 'zach297.com:8080'
     var backendHost = '127.0.0.1:8080'
     var backendBase = 'http://' + backendHost + '/'
+
+    //
+    // Gameplay Data
+    //
+
     $scope.cards = masterCards;
     $scope.games = [];
     $scope.game = undefined;
@@ -20,6 +47,20 @@ function CardController($scope, $http)
     $scope.playerAuth = undefined;
     $scope.playerName = undefined;
     $scope.selectedCards = [];
+
+    //
+    // UI Data
+    //
+    $scope.showSettingsDialog = false;
+    $scope.showSettings = function()
+    {
+        $scope.showSettingsDialog = true;
+        $scope.formName = $scope.playerName;
+    };
+    $scope.hideSettings = function()
+    {
+        $scope.showSettingsDialog = false;
+    };
 
     $scope.pollAvailableGames = function()
     {
@@ -33,32 +74,90 @@ function CardController($scope, $http)
     };
     $scope.pollAvailableGames();
 
-    $http({
-        method: 'POST',
-        url: backendBase + 'CreatePlayer',
-        data: 'Name=' + getRandom(randomNames),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
-    }).
-    success(function(data)
+    $scope.makePlayer = function()
     {
-        $scope.playerId = data['PlayerId'];
-        $scope.playerAuth = data['PlayerAuthId'];
-        $scope.playerName = data['PlayerName'];
-        console.log('Created Player');
-        console.debug(data);
-    });
+        // Reset player based data
+        $scope.game = undefined;
+        $scope.gameSocket = undefined;
+        $scope.playerId = undefined;
+        $scope.playerAuth = undefined;
+        $scope.playerName = undefined;
+        $scope.selectedCards = [];
+        delete localStorage.playerInfo;
 
-    $scope.getPlayerInfo = function()
+        $http({
+            method: 'POST',
+            url: backendBase + 'CreatePlayer',
+            data: 'Name=' + getRandom(randomNames),
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        }).
+        success(function(data)
+        {
+            $scope.playerId = data['PlayerId'];
+            $scope.playerAuth = data['PlayerAuthId'];
+            $scope.playerName = data['PlayerName'];
+            localStorage.playerInfo = JSON.stringify(
+            {
+                playerId  : data['PlayerId'],
+                playerAuth: data['PlayerAuthId'],
+                playerName: data['PlayerName']
+            });
+            console.log('Created Player');
+            console.debug(data);
+        });
+    };
+
+    if (localStorage.playerInfo)
     {
-        $http.get(backendBase + 'PlayerInfo').
+        console.log('Found player info, testing');
+        var player = JSON.parse(localStorage.playerInfo);
+        $scope.playerId = player.playerId;
+        $scope.playerAuth = player.playerAuth;
+        $scope.playerName = player.playerName;
+        $http({
+            method: 'GET',
+            url: backendBase + 'PlayerInfo',
+            params: { ID: $scope.playerId }
+        }).
+        error(function(data)
+        {
+            console.log('Bad player info, making new one');
+            delete localStorage.playerInfo;
+            $scope.makePlayer;
+        });
+    }
+    else
+    {
+        console.log('No player info, creating new one');
+        delete localStorage.playerInfo;
+        $scope.makePlayer();
+    }
+
+    $scope.getPlayerInfo = function(callback)
+    {
+        $http({
+            method: 'POST',
+            url: backendBase + 'PlayerInfo',
+            data: 'ID=' + playerId,
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        }).
         success(function(data)
         {
             console.log('Got Player Info');
             console.debug(data);
-            $scope.playerId = data['PlayerId'];
-            $scope.playerAuth = data['PlayerAuthId'];
-            $scope.playerName = data['PlayerName'];
+            var objData =
+            {
+                playerId  : data['PlayerId'],
+                playerAuth: data['PlayerAuthId'],
+                playerName: data['PlayerName']
+            };
+            callback(objData);
         });
+    };
+
+    $scope.changeName = function(name)
+    {
+
     };
 
     $scope.addGame = function()
@@ -193,4 +292,13 @@ function CardController($scope, $http)
         }
         return false;
     }
-};
+
+    //
+    // Intervals
+    //
+
+    $interval(function()
+    {
+        $scope.pollAvailableGames();
+    }, 5000);
+}]);
