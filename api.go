@@ -119,6 +119,8 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
 
 func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *http.Request) {
     playerIDStr := request.FormValue("PlayerID")
+    playerAuthStr := request.FormValue("Auth")
+    gameIDStr := request.FormValue("GameID")
     playerID, err := strconv.ParseUint(playerIDStr, 10, 31)
     if err != nil {
         WriteResponse(writer, 400, OKMessage {
@@ -137,7 +139,6 @@ func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *htt
         return
     }
 
-    playerAuthStr := request.FormValue("Auth")
     auth, err := strconv.ParseUint(playerAuthStr, 10, 31)
     if err != nil || uint32(auth) != player.PlayerAuthId {
         WriteResponse(writer, 400, OKMessage {
@@ -147,7 +148,6 @@ func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *htt
         return
     }
 
-    gameIDStr := request.FormValue("GameID")
     gameID, err := strconv.ParseUint(gameIDStr, 10, 31)
     if err != nil {
         WriteResponse(writer, 400, OKMessage {

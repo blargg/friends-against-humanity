@@ -156,7 +156,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.WinningCardQuery, err = db.DB.Prepare("SELECT BlackCardID FROM Round CROSS JOIN Game WHERE Game.ID = GameID AND CurrentRoundNumber - 1 = RoundNumber AND GameID = ?")
+    db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber")
     if err != nil {
         log.Fatal(err)
     }
@@ -411,13 +411,17 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     state.CurrentBlackCard = cardID
 
     // Find the previous winning card
-    var winningCardID uint32
-    err = db.WinningCardQuery.QueryRow(gameID).Scan(&winningCardID)
-    if err != nil {
-        winningCardID = 0
+    winningCardIDs := make([]uint32, 0)
+    rows, err := db.WinningCardQuery.Query(gameID)
+    if err == nil {
+        for rows.Next() {
+            var card uint32
+            rows.Scan(&card)
+            winningCardIDs = append(winningCardIDs, card)
+        }
     }
-    state.PreviousWinningCard = winningCardID
-
+    state.WinningCards = winningCardIDs
+    log.Println(state.WinningCards)
     // Find cards in play
     answerCount, err := db.AnswerCount(cardID)
     if err != nil {
