@@ -2,6 +2,7 @@ package main
 
 
 import (
+    "io"
     "encoding/json"
     "log"
     "net/http"
@@ -82,7 +83,11 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
         for {
 
             if err := websocket.JSON.Receive(ws, &msg); err != nil {
-                continue
+                if err == io.EOF {
+                    break;
+                } else {
+                    continue
+                }
             }
 
             currentJudge, _ := srv.db.CurrentJudge(auth.GameId)
