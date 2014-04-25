@@ -69,6 +69,16 @@ func (game *Game) PlayerConnect(playerID uint32, listenChannel chan GameState) {
     broadcaster.Listen(listenChannel)
 }
 
+
+func (game *Game) PlayerDisconnect(playerID uint32, listenChannel chan GameState) {
+    broadcaster, ok := game.broadcasters[playerID]
+    if !ok {
+        log.Fatalln("Failed to find broadcaster for disconnect")
+    }
+    broadcaster.Unsubscribe(listenChannel)
+}
+
+
 func (game *Game) BroadcastGameState(db *Database) {
     for playerId, broadcaster := range game.broadcasters { 
         gameState, err := db.GameStateForPlayer(game.ID, playerId)
