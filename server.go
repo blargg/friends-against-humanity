@@ -127,6 +127,9 @@ func (srv *Server) HandleWS(ws *websocket.Conn) {
     // This is to make sure the other goroutine gets the message
     killChan <- true
 
+    srv.Games[auth.GameId].PlayerDisconnect(auth.PlayerId, listenChan)
+
+
     log.Println("end websocket :(")
 }
 
