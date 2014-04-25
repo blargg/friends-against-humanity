@@ -156,7 +156,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber")
+    db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber AND ORDER BY PlayedOrder ASC")
     if err != nil {
         log.Fatal(err)
     }
@@ -421,7 +421,6 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
         }
     }
     state.WinningCards = winningCardIDs
-    log.Println(state.WinningCards)
     // Find cards in play
     answerCount, err := db.AnswerCount(cardID)
     if err != nil {
