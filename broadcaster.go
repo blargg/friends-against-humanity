@@ -1,11 +1,16 @@
 package main
 
+type Listener struct {
+    Channel chan GameState
+    KillChannel chan bool
+    Alive bool
+}
+
 type Broadcaster struct {
     killChannel chan bool
     broadcastChannel chan GameState
     addListenChannel chan chan GameState
-    unsubscribeChannel chan chan GameState
-    listeners []chan GameState
+    listeners []Listener
 }
 
 func (b *Broadcaster) Listen(listenChannel chan GameState) {
@@ -21,7 +26,12 @@ func (b *Broadcaster) Kill() {
 }
 
 func (b *Broadcaster) Unsubscribe(listenChannel chan GameState) {
-    b.unsubscribeChannel <- listenChannel
+    for i := 0; i < len(b.listeners); i++ {
+        if b.listeners[i].Channel == listenChannel {
+            b.listeners[i].KillChannel <- false
+            b.listeners[i].Alive = false
+        }
+    }
 }
 
 func NewBroadcaster() *Broadcaster {
@@ -29,28 +39,36 @@ func NewBroadcaster() *Broadcaster {
         killChannel: make(chan bool, 0),
         broadcastChannel: make(chan GameState, 0),
         addListenChannel: make(chan chan GameState, 0),
-        unsubscribeChannel: make(chan chan GameState, 0),
-        listeners: make([]chan GameState, 0),
+        listeners: make([]Listener, 0),
     }
 
     go func() {
         for {
             select {
-            case listenChannel := <- b.unsubscribeChannel:
-                removeIndex := -1
-                for i := 0; i < len(b.listeners); i++ {
-                    if b.listeners[i] == listenChannel {
-                        removeIndex = i
-                    }
-                }
-                b.listeners = append(b.listeners[:removeIndex], b.listeners[removeIndex+1:]...)
-                break
             case listenChannel := <-b.addListenChannel:
-                b.listeners = append(b.listeners, listenChannel)
+                listener := Listener{
+                    Channel: listenChannel,
+                    KillChannel: make(chan bool, 1),
+                    Alive: true,
+                }
+                b.listeners = append(b.listeners, listener)
             case msg := <-b.broadcastChannel:
                 for _, listener := range(b.listeners) {
-                    listener <- msg
+                    select {
+                        case listener.Channel <- msg:
+                            break
+                        case listener.Alive = <- listener.KillChannel:
+                            break
+                    }
                 }
+                // clear out dead listeners
+                for i := 0; i < len(b.listeners); i++ {
+                    if !b.listeners[i].Alive { 
+                        b.listeners = append(b.listeners[:i], b.listeners[i+1:]...)
+                        i--
+                    }
+                }
+                break
             case <-b.killChannel:
                 break
             }
