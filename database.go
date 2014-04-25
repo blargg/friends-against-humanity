@@ -45,7 +45,6 @@ type Database struct {
 
 func (db *Database)Init() {
     var err error
-    log.Println("Connecting")
     db.DB, err = sql.Open("mysql", "root:@tcp(localhost:3306)/FriendsAgainstHumanity")
 
     err = db.DB.Ping()
@@ -450,9 +449,6 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     // Find scores
     state.Scores, err = db.PlayerScores(gameID)
 
-    log.Println(state.Players)
-    log.Println(state.Scores)
-
     state.End = false
 
     return state, nil
@@ -484,9 +480,7 @@ func (db *Database) GameStateForPlayer(gameID uint32, playerID uint32) (GameStat
 
 func (db* Database) GetGames() ([]*Game, error) {
     games := make([]*Game, 0)
-    log.Println("Beginning get games query")
     gameRows, err := db.GamesQuery.Query()
-    log.Println("Finished get games query")
     defer gameRows.Close()
     if err != nil {
         return games, err
@@ -495,9 +489,7 @@ func (db* Database) GetGames() ([]*Game, error) {
     for gameRows.Next() {
         var gameID uint32
         var gameName string
-        log.Println("Scanning ", gameName)
         gameRows.Scan(&gameID, &gameName)
-        log.Println("Scanned ", gameName)
 
         games = append(games, NewGame(gameID, gameName))
     }
