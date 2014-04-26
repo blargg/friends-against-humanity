@@ -47,6 +47,7 @@ type Database struct {
     TurnOrderQuery          *sql.Stmt
     WinningCardQuery        *sql.Stmt
     PlayerScoresQuery       *sql.Stmt
+    BlackCardForRoundQuery  *sql.Stmt
 }
 
 func (db *Database)Init() {
