@@ -156,7 +156,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber AND ORDER BY PlayedOrder ASC")
+    db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber ORDER BY PlayedOrder ASC")
     if err != nil {
         log.Fatal(err)
     }
