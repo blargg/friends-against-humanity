@@ -459,7 +459,7 @@ func (db *Database) PlayerScores(gameID uint32) ([]uint32, error) {
 
 func (db *Database) BlackCardForRound(gameID uint32, roundNumber uint32) (uint32, error) {
     var blackCardID uint32;
-    err := db.BlackCardForRoundQuery.QueryRow(gameID, roundNumber).Scan(blackCardID)
+    err := db.BlackCardForRoundQuery.QueryRow(gameID, roundNumber).Scan(&blackCardID)
 
     return blackCardID, err
 }
