@@ -497,7 +497,7 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
     // Find judge
     state.CurrentJudge, err = db.CurrentJudge(gameID)
     if err != nil {
-        log.Printf("in game %d, could not find judge\n")
+        log.Printf("in game %d, could not find judge\n", gameID)
         state.CurrentJudge = 0
     }
 
@@ -717,9 +717,8 @@ func (db *Database) CardWeight(blackCard uint32, whiteCard uint32) float32 {
         var blabel string
         var weight float32
         if err = rows.Scan(&blabel, &weight); err != nil {
-            log.Println("scanning black label weights")
+            log.Println("error scanning black label weights")
         }
-        log.Printf("label = %s, weight = %f\n", blabel, weight)
         _, exists := labels[blabel]
         if exists {
             total *= weight
@@ -747,7 +746,7 @@ func (db *Database) aiChooseCard(blackCardID uint32, cardIDs []uint32, answercou
 func (db *Database) AIPlayRound(gameID uint32) {
     players, err := db.GetAIPlayers(gameID)
     if err != nil {
-        log.Println("AIPlayRound")
+        log.Println("error AIPlayRound")
     }
     for _, playerID := range players {
         gamestate, err := db.GameStateForPlayer(gameID, playerID)
