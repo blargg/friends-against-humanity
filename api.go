@@ -99,14 +99,14 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
     gameInfos := []GameInfo{}
     for index := range games {
         playerCount, err := srv.db.PlayerCount(games[index].ID)
-        
+
         if err != nil {
             log.Fatal(err)
         }
 
-        gameInfo := GameInfo { 
-            Name: games[index].Name, 
-            GameId: games[index].ID, 
+        gameInfo := GameInfo {
+            Name: games[index].Name,
+            GameId: games[index].ID,
             PlayerCount: playerCount,
         }
         gameInfos = append(gameInfos, gameInfo)
@@ -118,9 +118,9 @@ func (srv *Server) HandleAvailableGamesRequest(writer http.ResponseWriter, reque
 }
 
 func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *http.Request) {
-    playerIDStr := request.FormValue("PlayerID")
-    playerAuthStr := request.FormValue("Auth")
-    gameIDStr := request.FormValue("GameID")
+    playerIDStr := request.FormValue("PlayerId")
+    playerAuthStr := request.FormValue("AuthToken")
+    gameIDStr := request.FormValue("GameId")
     playerID, err := strconv.ParseUint(playerIDStr, 10, 31)
     if err != nil {
         WriteResponse(writer, 400, OKMessage {
@@ -174,10 +174,10 @@ func (srv *Server) HandleEndGameRequest(writer http.ResponseWriter, request *htt
         return
     }
 
-    srv.Games[uint32(gameID)].EndGame(&srv.db) 
+    srv.Games[uint32(gameID)].EndGame(&srv.db)
     delete(srv.Games, uint32(gameID))
 
-    WriteResponse(writer, 400, OKMessage {
+    WriteResponse(writer, 200, OKMessage {
         OK : true,
         Message : "",
     })
