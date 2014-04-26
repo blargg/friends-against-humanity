@@ -182,6 +182,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
+
     db.WinningCardQuery, err = db.DB.Prepare("SELECT CardID FROM CardInHand, Round, Game WHERE Game.ID = Round.GameID AND Game.Id = CardInHand.GameId AND CurrentRoundNumber - 1 = RoundNumber AND Game.ID = ? AND WinnerID = PlayerID AND RoundPlayed = RoundNumber ORDER BY PlayedOrder ASC")
     if err != nil {
         log.Fatal(err)
@@ -190,7 +191,10 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-
+    db.BlackCardForRoundQuery, err = db.DB.Prepare("SELECT BlackCardID FROM Round WHERE GameID = ? AND RoundNumber = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 
 func (db * Database) Deinit() {
@@ -452,6 +456,13 @@ func (db *Database) PlayerScores(gameID uint32) ([]uint32, error) {
     return scores, nil
 }
 
+func (db *Database) BlackCardForRound(gameID uint32, roundNumber uint32) (uint32, error) {
+    var blackCardID uint32;
+    err := db.BlackCardForRoundQuery.QueryRow(gameID, roundNumber).Scan(blackCardID)
+
+    return blackCardID, err
+}
+
 func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
 
     var state GameState
@@ -509,6 +520,8 @@ func (db *Database) GameStateNoPlayer(gameID uint32) (GameState, error) {
 
     // Find scores
     state.Scores, err = db.PlayerScores(gameID)
+
+    state.PreviousBlackCard, err = db.BlackCardForRound(gameID, state.RoundNumber - 1)
 
     state.End = false
 

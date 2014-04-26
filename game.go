@@ -13,6 +13,7 @@ type GameState struct {
     TurnOrder           uint32
     TurnCount           uint32
 
+    PreviousBlackCard   uint32
     WinningCards        []uint32
 
     Players             []string
@@ -51,7 +52,7 @@ func (game *Game) PlayerJoin(db* Database, playerID uint32) {
     for i := 0; i < 10; i++ {
         db.DrawCard(game.ID, playerID)
     }
-    
+
     game.BroadcastGameState(db)
 }
 
