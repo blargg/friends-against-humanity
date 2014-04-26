@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "errors"
+    "sort"
     "database/sql"
     "math/big"
     "math/rand"
@@ -61,7 +62,7 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.LabelWeightsQuery, err = db.DB.Prepare("SELECT label, weight FROM LabelWeights WHERE BlackCardID = ?")
+    db.LabelWeightsQuery, err = db.DB.Prepare("SELECT label, weight FROM MaterializedWeights WHERE BlackCardID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -730,8 +731,17 @@ func (db *Database) CardWeight(blackCard uint32, whiteCard uint32) float32 {
     return total
 }
 
-func aiChooseCard(cardIDs []uint32, answercount uint32) []uint32 {
-    return cardIDs[:answercount]
+func (db *Database) aiChooseCard(blackCardID uint32, cardIDs []uint32, answercount uint32) []uint32 {
+    TaggedList := make([]FloatPair, 0)
+    for _, cardID := range cardIDs {
+        TaggedList = append(TaggedList, FloatPair{cardID, db.CardWeight(blackCardID, cardID)})
+    }
+    sort.Sort(sort.Reverse(ByTag(TaggedList)))
+    response := make([]uint32, 0)
+    for _, pair := range TaggedList {
+        response = append(response, pair.data.(uint32))
+    }
+    return response[:answercount]
 }
 
 func (db *Database) AIPlayRound(gameID uint32) {
@@ -746,7 +756,7 @@ func (db *Database) AIPlayRound(gameID uint32) {
         }
         cards := gamestate.Hand
         ansCount, err := db.AnswerCount(gamestate.CurrentBlackCard)
-        cardsToPlay := aiChooseCard(cards, ansCount)
+        cardsToPlay := db.aiChooseCard(gamestate.CurrentBlackCard, cards, ansCount)
         db.PlayCardsCheck(gameID, playerID, cardsToPlay)
     }
 }
