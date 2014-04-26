@@ -39,7 +39,8 @@
           </ul>
         </div>
         <div class="hand">
-          <div class="game-controls">
+          <div class="no-game-cover" ng-show="game == undefined"><div>Select Game</div></div>
+          <div class="game-controls" ng-show="game">
             <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
             <button class="btn btn-primary" ng-click="judgeCard()" ng-show="isGameJudge()">Choose Winner</button>
             <button class="btn btn-inverse" ng-click="clearSelection()">Clear Selection</button>
@@ -49,6 +50,7 @@
                 <li ng-repeat="player in game.players track by $index"><a href="#">{{ player }} - {{ game.scores[$index] }}</a></li>
               </ul>
             </div>
+            <button class="btn btn-danger" ng-show="game.turnOrder == 1" ng-click="endGame()">End Game</button>
             <span>Hello {{ playerName }}.</span>
             <span ng-show="isGameJudge()">You are the Judge this round.</span>
             <span ng-show="game && !isGameJudge()"><ng-pluralize count="game.cardsNeeded" when="{'one': 'Select a card', 'other': 'Select {} cards.'}"></ng-pluralize></span>

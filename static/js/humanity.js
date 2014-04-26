@@ -188,6 +188,23 @@ angular.module('HumanityApp', [])
         });
     };
 
+    $scope.endGame = function()
+    {
+        $http({
+            method: 'POST',
+            url: backendBase + 'EndGame',
+            data: 'PlayerId=' + $scope.playerId +
+                  '&AuthToken=' + $scope.playerAuth +
+                  '&GameId=' + $scope.game.gameId,
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        }).
+        success(function(data)
+        {
+            console.log('Added Game');
+            $scope.pollAvailableGames();
+        });
+    };
+
     $scope.selectGame = function(gameSession)
     {
         console.log('select game: ' + gameSession.Name + '( ' + gameSession.GameId + ' )');
@@ -213,8 +230,10 @@ angular.module('HumanityApp', [])
             $scope.gameSocket.onmessage = function(event) {
                 var data = JSON.parse(event.data);
                 $scope.game = {
+                    'gameId':  data['GameId'],
                     'currentBlackCard':  data['CurrentBlackCard'],
                     'hand':  data['Hand'],
+                    'turnOrder': data['TurnOrder'],
                     'judge': data['CurrentJudge'],
                     'inPlay': data['MultiInPlay'],
                     'players': data['Players'],
@@ -222,6 +241,10 @@ angular.module('HumanityApp', [])
                     'winningCards': data['WinningCards']
                 };
                 $scope.game['cardsNeeded'] = $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
+                if (data['End'])
+                {
+                    $scope.game = undefined;
+                }
                 console.log('GameState Message');
                 console.debug(data);
                 $scope.$digest();

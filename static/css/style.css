@@ -117,8 +117,13 @@ ul.game-session li:hover {
     margin-right: auto;
 }
 
-.game-controls
-{
+.no-game-cover {
+    font-family: 'Roboto';
+    font-size: 32px;
+    text-align: center;
+}
+
+.game-controls {
     position: fixed;
     padding: 8px;
     z-index: 1;
