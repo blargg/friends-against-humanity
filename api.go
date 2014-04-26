@@ -78,6 +78,8 @@ func (srv *Server) HandleCreatePlayerRequest(writer http.ResponseWriter, request
 
 func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *http.Request) {
     gameName := request.FormValue("Name")
+    aiCountStr := request.FormValue("AI")
+    aiCount, err := strconv.ParseInt(aiCountStr, 10, 31)
     gameId, err := srv.db.CreateGame(gameName)
     if err != nil {
         log.Fatal(err)
@@ -85,8 +87,10 @@ func (srv *Server) HandleCreateGameRequest(writer http.ResponseWriter, request *
 
     game := NewGame(gameId, gameName)
     srv.Games[gameId] = game
-    game.AIJoin(&srv.db)
-    game.AIJoin(&srv.db)
+
+    for i := int64(0); i < aiCount; i++ {
+        game.AIJoin(&srv.db)
+    }
 
     writer.Header().Set("Access-Control-Allow-Origin", "*")
     WriteResponse(writer, 200, CreateGameMessage{ GameId : gameId, })

@@ -51,6 +51,8 @@ func (game *Game) PlayerJoin(db* Database, playerID uint32) {
     for i := 0; i < 10; i++ {
         db.DrawCard(game.ID, playerID)
     }
+    
+    game.BroadcastGameState(db)
 }
 
 func (game *Game) AIJoin(db *Database) {
@@ -58,6 +60,7 @@ func (game *Game) AIJoin(db *Database) {
     for i := 0; i < 10; i++ {
         db.DrawCard(game.ID, playerID)
     }
+
     game.AIPlayRound(db)
 }
 
