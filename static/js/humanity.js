@@ -22,7 +22,6 @@ angular.module('HumanityApp', [])
         {
             scope.hideDialog = function()
             {
-                console.log("hiding");
                 scope.show = false;
             };
         },
@@ -51,15 +50,31 @@ angular.module('HumanityApp', [])
     //
     // UI Data
     //
+
+    $scope.settingsForm = {};
     $scope.showSettingsDialog = false;
     $scope.showSettings = function()
     {
         $scope.showSettingsDialog = true;
-        $scope.formName = $scope.playerName;
+        $scope.settingsForm.name = $scope.playerName;
     };
     $scope.hideSettings = function()
     {
+        console.log("hide!");
         $scope.showSettingsDialog = false;
+    };
+
+    $scope.newGameForm = {};
+    $scope.showNewGameDialog = false;
+    $scope.showNewGame = function()
+    {
+        $scope.newGameForm.name = getRandom(randomGameNames);
+        $scope.newGameForm.aiPlayers = 0;
+        $scope.showNewGameDialog = true;
+    };
+    $scope.hideNewGame = function()
+    {
+        $scope.showNewGameDialog = false;
     };
 
     $scope.pollAvailableGames = function()
@@ -68,14 +83,17 @@ angular.module('HumanityApp', [])
         success(function(data)
         {
             $scope.games = data['Games'];
-            console.log('Polled Games');
-            console.debug($scope.games);
         });
     };
     $scope.pollAvailableGames();
 
-    $scope.makePlayer = function()
+    $scope.makePlayer = function(name)
     {
+        if (!name)
+        {
+            name = getRandom(randomNames);
+        }
+
         // Reset player based data
         $scope.game = undefined;
         $scope.gameSocket = undefined;
@@ -88,7 +106,7 @@ angular.module('HumanityApp', [])
         $http({
             method: 'POST',
             url: backendBase + 'CreatePlayer',
-            data: 'Name=' + getRandom(randomNames),
+            data: 'Name=' + name,
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         }).
         success(function(data)
@@ -123,7 +141,7 @@ angular.module('HumanityApp', [])
         {
             console.log('Bad player info, making new one');
             delete localStorage.playerInfo;
-            $scope.makePlayer;
+            $scope.makePlayer();
         });
     }
     else
@@ -155,17 +173,12 @@ angular.module('HumanityApp', [])
         });
     };
 
-    $scope.changeName = function(name)
-    {
-
-    };
-
-    $scope.addGame = function()
+    $scope.makeGame = function(name, aiPlayers)
     {
         $http({
             method: 'POST',
             url: backendBase + 'CreateGame',
-            data: 'Name=' + getRandom(randomGameNames),
+            data: 'Name=' + name,
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         }).
         success(function(data)
@@ -203,8 +216,12 @@ angular.module('HumanityApp', [])
                     'currentBlackCard':  data['CurrentBlackCard'],
                     'hand':  data['Hand'],
                     'judge': data['CurrentJudge'],
-                    'inPlay': data['MultiInPlay']
+                    'inPlay': data['MultiInPlay'],
+                    'players': data['Players'],
+                    'scores': data['Scores'],
+                    'winningCards': data['WinningCards']
                 };
+                $scope.game['cardsNeeded'] = $scope.cards[$scope.game.currentBlackCard - 1]['numAnswers'];
                 console.log('GameState Message');
                 console.debug(data);
                 $scope.$digest();

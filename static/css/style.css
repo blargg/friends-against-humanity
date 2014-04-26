@@ -6,6 +6,11 @@ html, body
     overflow-x: hidden;
 }
 
+label {
+    font-family: 'Roboto';
+    font-weight: normal;
+}
+
 .main-container {
     margin: 0;
     width: 100%;
@@ -125,17 +130,18 @@ ul.game-session li:hover {
 }
 
 .card {
+    border-radius: 8px;
+    border: 1px solid black;
     cursor: default;
     float: left;
-    border: 1px solid black;
-    border-radius: 8px;
+    font-family: helvetica;
+    font-size: 16px;
+    font-weight: 900;
+    height: 300px;
     margin: 16px 8px;
     padding: 16px;
-    font-size: 16px;
-    font-family: helvetica;
-    font-weight: 900;
+    position: relative;
     width: 200px;
-    height: 300px;
 }
 
 .card::after {
@@ -160,7 +166,6 @@ ul.game-session li:hover {
 }
 
 .card-selectable {
-    position: relative;
     top: 0;
     transition: top 0.1s;
 }

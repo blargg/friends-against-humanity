@@ -14,17 +14,24 @@
     <body ng-app="HumanityApp" ng-controller="CardController">
       <dialog show="showSettingsDialog">
         <h1>Settings</h1>
-        <form ng-submit="formName = ''; hideSettings(); changeName(formName);">
-          <input name="name" ng-model="formName" placeholder="Name" />
-          <button type="submit" class="btn btn-primary" title="Change Name">Change Name</button>
+        <form ng-submit="hideSettings(); makePlayer(settingsForm.name);">
+          <input type="text" name="name" ng-model="settingsForm.name" placeholder="Name" />
+          <button type="submit" class="btn btn-primary" title="Change Name">New Player</button>
         </form>
-        <button class="btn btn-primary" ng-click="hideSettings(); makePlayer()">New Player ID</button>
+      </dialog>
+      <dialog show="showNewGameDialog">
+        <h1>New Game</h1>
+        <form ng-submit="makeGame(newGameForm.name, newGameForm.aiPlayers); hideNewGame();">
+          <label>Game Name: <input type="text" ng-model="newGameForm.name" placeholder="Name" style="width: 400px" /></label><br />
+          <label>AI Players: <input type="number" ng-model="newGameForm.aiPlayers" placeholder="Number of AI" /></label><br />
+          <button type="submit" class="btn btn-primary" title="Change Name">New Game</button>
+        </form>
       </dialog>
       <div class="main-container">
         <div class="sidebar">
           <ul class="game-session">
             <li style="text-align: center" ng-click="showSettings()"><i class="fa fa-gear"></i></li>
-            <li style="text-align: center" ng-click="addGame()"><i class="fa fa-plus"></i></li>
+            <li style="text-align: center" ng-click="showNewGame()"><i class="fa fa-plus"></i></li>
             <li ng-repeat="game in games track by $index" ng-click="selectGame(game)" title="{{ game.name }}">
               <span class="game-session-players">{{ game.PlayerCount || 0 }}/{{ game.PlayerCapacity || "&infin;" }}</span>
               <span class="game-session-name">{{ game.Name }}</span>
@@ -35,14 +42,16 @@
           <div class="game-controls">
             <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
             <button class="btn btn-primary" ng-click="judgeCard()" ng-show="isGameJudge()">Choose Winner</button>
-            <button class="btn btn-inverse" ng-click="clearSelection()">Clear</button>
+            <button class="btn btn-inverse" ng-click="clearSelection()">Clear Selection</button>
             <div class="btn-group">
               <button class="btn btn-info dropdown-toggle" data-toggle="dropdown">Scores <span class="caret"></span></button>
               <ul class="dropdown-menu">
-                <li><a href="#">Hello</a></li>
-                <li><a href="#">Hello2</a></li>
+                <li ng-repeat="player in game.players track by $index"><a href="#">{{ player }} - {{ game.scores[$index] }}</a></li>
               </ul>
             </div>
+            <span>Hello {{ playerName }}.</span>
+            <span ng-show="isGameJudge()">You are the Judge this round.</span>
+            <span ng-show="game && !isGameJudge()"><ng-pluralize count="game.cardsNeeded" when="{'one': 'Select a card', 'other': 'Select {} cards.'}"></ng-pluralize></span>
           </div>
           <div class="cards">
             <div class="card card-selectable"
@@ -61,7 +70,8 @@
           </div>
         </div>
         <div class="round">
-          <div class="card card-black card-fix" title="{{ cards[game.currentBlackCard - 1].text }}">{{ cards[game.currentBlackCard - 1].text }}</div>
+          <div class="card card-black" title="{{ cards[game.currentBlackCard - 1].text }}">{{ cards[game.currentBlackCard - 1].text }}</div>
+          <div class="card" ng-show="game.winningCards.length > 0"><span ng-repeat="card in game.winningCards" title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}<br /></span></div>
         </div>
       </div>
       <script src="js/jquery-1.10.1.min.js"></script>
