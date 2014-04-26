@@ -178,7 +178,7 @@ angular.module('HumanityApp', [])
         $http({
             method: 'POST',
             url: backendBase + 'CreateGame',
-            data: 'Name=' + name,
+            data: 'Name=' + name + '&AI=' + aiPlayers,
             headers: {'Content-Type': 'application/x-www-form-urlencoded'}
         }).
         success(function(data)
