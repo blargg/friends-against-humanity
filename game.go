@@ -10,8 +10,9 @@ type GameState struct {
     CurrentBlackCard    uint32
     CurrentJudge        uint32
     PlayerCount         uint32
+    TurnOrder           uint32
+    
     WinningCards        []uint32
-
     Players             []string
     Scores              []uint32
     Hand                []uint32

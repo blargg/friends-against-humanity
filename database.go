@@ -478,6 +478,9 @@ func (db *Database) GameStateForPlayer(gameID uint32, playerID uint32) (GameStat
     }
 
     state.Hand = cards
+
+    state.TurnOrder, err = db.TurnOrder(gameID, playerID)
+
     return state, nil
 }
 
