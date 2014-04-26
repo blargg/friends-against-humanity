@@ -53,27 +53,28 @@
             <button class="btn btn-danger" ng-show="game.turnOrder == 1" ng-click="endGame()">End Game</button>
             <span>Hello {{ playerName }}.</span>
             <span ng-show="isGameJudge()">You are the Judge this round.</span>
-            <span ng-show="game && !isGameJudge()"><ng-pluralize count="game.cardsNeeded" when="{'one': 'Select a card', 'other': 'Select {} cards.'}"></ng-pluralize></span>
+            <span ng-show="game && game.inPlay.length == 0 && !isGameJudge()"><ng-pluralize count="game.cardsNeeded" when="{'one': 'Select a card', 'other': 'Select {} cards.'}"></ng-pluralize></span>
           </div>
           <div class="cards">
             <div class="card card-selectable"
-                 ng-if="!isGameJudge()"
+                 ng-if="game.inPlay.length == 0 && !isGameJudge()"
                  ng-repeat="card in game.hand track by $index"
                  ng-class="isCardSelected(card)"
                  ng-click="selectCard(card)"
-                 title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}</div>
-            <div class="card card-selectable"
-                 ng-if="isGameJudge()"
+                 ng-bind-html="cards[card - 1].text | unsafe"
+                 title="{{ cards[card - 1].text | unsafe }}"></div>
+            <div class="card card-black card-selectable"
+                 ng-if="game.inPlay.length > 0"
                  ng-repeat="cardStack in game.inPlay track by $index"
                  ng-class="isCardSelected(cardStack)"
-                 ng-click="selectCard(cardStack)">
-              <span ng-repeat="card in cardStack" title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}<br /></span>
-            </div>
+                 ng-click="selectCard(cardStack)"
+                 ng-bind-html="fillBlanks(game.currentBlackCard, cardStack)"></div>
           </div>
         </div>
         <div class="round">
-          <div class="card card-black" title="{{ cards[game.currentBlackCard - 1].text }}">{{ cards[game.currentBlackCard - 1].text }}</div>
-          <div class="card" ng-show="game.winningCards.length > 0"><span ng-repeat="card in game.winningCards" title="{{ cards[card - 1].text }}">{{ cards[card - 1].text }}<br /></span></div>
+          <div class="card card-black" title="{{ cards[game.currentBlackCard - 1].text | unsafe }}" ng-bind-html="cards[game.currentBlackCard - 1].text | unsafe"></div>
+          <div style="clear: both; margin: 8px" ng-show="game.winningCards.length > 0">Previous Round Winner:</div>
+          <div class="card card-black" ng-if="game.winningCards.length > 0" ng-bind-html="fillBlanks(game.previousBlackCard, game.winningCards)"></div>
         </div>
       </div>
       <script src="js/jquery-1.10.1.min.js"></script>

@@ -7,7 +7,19 @@ function getRandom(a)
     return a[Math.floor(Math.random() * a.length)];
 }
 
+function fillBlanks(text, items)
+{
+
+}
+
 angular.module('HumanityApp', [])
+.filter('unsafe', function($sce)
+{
+    return function(v)
+    {
+        return $sce.trustAsHtml(v);
+    };
+})
 .directive('dialog', function()
 {
     return {
@@ -28,7 +40,7 @@ angular.module('HumanityApp', [])
         template: '<div class="dialog" ng-show="show"><div class="dialog-container"><div class="content" ng-transclude></div><button class="btn btn-danger" style="float: right" ng-click="hideDialog()">Close</button></div></div>'
     };
 })
-.controller('CardController', ['$scope', '$http', '$interval', function($scope, $http, $interval)
+.controller('CardController', ['$scope', '$http', '$interval', '$sce', function($scope, $http, $interval, $sce)
 {
     //var backendHost = 'zach297.com:8080'
     var backendHost = '127.0.0.1:8080'
@@ -231,7 +243,8 @@ angular.module('HumanityApp', [])
                 var data = JSON.parse(event.data);
                 $scope.game = {
                     'gameId':  data['GameId'],
-                    'currentBlackCard':  data['CurrentBlackCard'],
+                    'currentBlackCard': data['CurrentBlackCard'],
+                    'previousBlackCard': 1,
                     'hand':  data['Hand'],
                     'turnOrder': data['TurnOrder'],
                     'judge': data['CurrentJudge'],
@@ -331,6 +344,34 @@ angular.module('HumanityApp', [])
             return $scope.playerId == $scope.game.judge;
         }
         return false;
+    }
+
+    $scope.fillBlanks = function(blackCard, items)
+    {
+        var text = '';
+        var blanks = $scope.cards[blackCard - 1].text.split('_');
+        var itemTexts = [];
+        for (var itemIndex = 0; itemIndex < items.length; itemIndex++)
+        {
+            itemTexts.push($scope.cards[items[itemIndex] - 1].text.slice(0, -1)); // Remove trailing period
+        }
+
+        var blanksIndex;
+        for (blanksIndex = 0; blanksIndex < blanks.length; blanksIndex++)
+        {
+            text += blanks[blanksIndex];
+            if (blanksIndex < items.length)
+            {
+                text += '<br /><span class="player">' + itemTexts[blanksIndex] + '</span>';
+            }
+        }
+
+        for (var itemIndex = blanksIndex; itemIndex < items.length; itemIndex++)
+        {
+            text += '<br /><span class="player">' + itemTexts[itemIndex] + '</span>';
+        }
+
+        return $sce.trustAsHtml(text);
     }
 
     //
