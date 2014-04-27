@@ -244,7 +244,7 @@ angular.module('HumanityApp', [])
                 $scope.game = {
                     'gameId':  data['GameId'],
                     'currentBlackCard': data['CurrentBlackCard'],
-                    'previousBlackCard': 1,
+                    'previousBlackCard': data['PreviousBlackCard'],
                     'hand':  data['Hand'],
                     'turnOrder': data['TurnOrder'],
                     'judge': data['CurrentJudge'],
