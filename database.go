@@ -2,7 +2,6 @@ package main
 
 import (
     "log"
-    "errors"
     "sort"
     "database/sql"
     "math/big"
@@ -27,6 +26,8 @@ type Database struct {
     NewRoundQuery           *sql.Stmt
     DrawWhiteCardQuery      *sql.Stmt
     DrawBlackCardQuery      *sql.Stmt
+    RemoveWhiteCardQuery    *sql.Stmt
+    RemoveBlackCardQuery    *sql.Stmt
     DrawFirstBlackCardQuery *sql.Stmt
     AuthenticationQuery     *sql.Stmt
     JudgeQuery              *sql.Stmt
@@ -48,6 +49,8 @@ type Database struct {
     WinningCardQuery        *sql.Stmt
     PlayerScoresQuery       *sql.Stmt
     BlackCardForRoundQuery  *sql.Stmt
+    ShuffleWhiteDeckQuery   *sql.Stmt
+    ShuffleBlackDeckQuery   *sql.Stmt
 }
 
 func (db *Database)Init() {
@@ -107,11 +110,27 @@ func (db *Database)Init() {
     if err != nil {
         log.Fatal(err)
     }
-    db.DrawWhiteCardQuery, err = db.DB.Prepare("SELECT CardID FROM WhiteDeck WHERE GameID = ?")
+    db.ShuffleWhiteDeckQuery, err = db.DB.Prepare("INSERT INTO WhiteDeck2 (SELECT WhiteCard.ID, ? FROM WhiteCard)")
     if err != nil {
         log.Fatal(err)
     }
-    db.DrawBlackCardQuery, err = db.DB.Prepare("SELECT CardID FROM BlackDeck WHERE GameID = ?")
+    db.ShuffleBlackDeckQuery, err = db.DB.Prepare("INSERT INTO BlackDeck2 (SELECT BlackCard.ID, ? FROM BlackCard)")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.DrawWhiteCardQuery, err = db.DB.Prepare("SELECT CardID FROM WhiteDeck2 WHERE GameID = ? ORDER BY RAND()")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.DrawBlackCardQuery, err = db.DB.Prepare("SELECT CardID FROM BlackDeck2 WHERE GameID = ? ORDER BY RAND()")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.RemoveWhiteCardQuery, err = db.DB.Prepare("DELETE FROM WhiteDeck2 WHERE CardID = ? AND GameID = ?")
+    if err != nil {
+        log.Fatal(err)
+    }
+    db.RemoveBlackCardQuery, err = db.DB.Prepare("DELETE FROM BlackDeck2 WHERE CardID = ? AND GameID = ?")
     if err != nil {
         log.Fatal(err)
     }
@@ -263,7 +282,10 @@ func (db *Database) DrawBlackCard(gameID uint32) (uint32, error) {
     }
 
     if !rows.Next() {
-        return 0, errors.New("Black Deck Empty")
+        _, err = db.ShuffleBlackDeckQuery.Exec(gameID)
+        rows, err = db.DrawBlackCardQuery.Query(gameID)
+        rows.Next()
+        defer rows.Close();
     }
 
     var cardID uint32
@@ -271,6 +293,7 @@ func (db *Database) DrawBlackCard(gameID uint32) (uint32, error) {
     if err != nil {
         return 0, err
     }
+    _, err = db.RemoveBlackCardQuery.Exec(cardID, gameID)
 
     return cardID, nil
 }
@@ -283,12 +306,14 @@ func (db *Database) DrawFirstBlackCard() (uint32, error) {
     }
 
     if !rows.Next() {
-        return 0, errors.New("Black Deck Empty")
+        log.Println("Black Deck Empty")
+        return 0, err
     }
 
     var cardID uint32
     err = rows.Scan(&cardID)
     if err != nil {
+        log.Println("Error Drawing First Black Card")
         return 0, err
     }
 
@@ -303,7 +328,10 @@ func (db *Database) DrawWhiteCard(gameID uint32) (uint32, error) {
     }
 
     if !rows.Next() {
-        return 0, errors.New("White Deck Empty")
+        _, err = db.ShuffleWhiteDeckQuery.Exec(gameID)
+        rows, err = db.DrawBlackCardQuery.Query(gameID)
+        rows.Next()
+        defer rows.Close();
     }
 
     var cardID uint32
@@ -312,6 +340,7 @@ func (db *Database) DrawWhiteCard(gameID uint32) (uint32, error) {
         return 0, err
     }
 
+    _, err = db.RemoveWhiteCardQuery.Exec(cardID, gameID)
     return cardID, nil
 }
 
@@ -703,6 +732,11 @@ func (db* Database) CreateGame(name string) (uint32, error) {
     res, err := db.CreateGameQuery.Exec(name, card)
 
     lastInsert, err := res.LastInsertId()
+
+    _, err = db.ShuffleBlackDeckQuery.Exec(lastInsert)
+    _, err = db.ShuffleWhiteDeckQuery.Exec(lastInsert)
+
+    log.Println(card)
 
     return uint32(lastInsert), err
 }
