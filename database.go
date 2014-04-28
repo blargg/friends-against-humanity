@@ -663,6 +663,7 @@ func (db* Database) PlayerJoin(playerID uint32, gameID uint32, turnOrder uint32)
 
 func (db *Database) NewAIForGame(gameID uint32) (uint32, error) {
     rows, err := db.AINotInGameQuery.Query(gameID)
+    defer rows.Close()
     if err == sql.ErrNoRows {
         log.Println("no more ai players")
         return 0, err
@@ -707,6 +708,7 @@ func (db* Database) IsPlayerInGame(playerID uint32, gameID uint32) (bool, error)
 func (db* Database) GetAIPlayers(gameID uint32) ([]uint32, error) {
     aiPlayers := make([]uint32, 0)
     rows, err := db.GetAIPlayerInGameQuery.Query(gameID)
+    defer rows.Close()
     if err != nil {
         return aiPlayers, err
     }
@@ -744,6 +746,7 @@ func (db* Database) CreateGame(name string) (uint32, error) {
 func (db *Database) GetWhiteLabels(whiteCardID uint32) map[string]bool {
     labels := make(map[string]bool)
     rows, err := db.LabelsQuery.Query(whiteCardID)
+    defer rows.Close()
     for rows.Next() {
         var label string
         if err = rows.Scan(&label); err != nil {
@@ -758,6 +761,7 @@ func (db *Database) CardWeight(blackCard uint32, whiteCard uint32) float32 {
     total := float32(1.0)
     labels := db.GetWhiteLabels(whiteCard)
     rows, err := db.LabelWeightsQuery.Query(blackCard)
+    defer rows.Close()
     if err != nil {
         log.Println("LabelWeightsQuery err")
     }
