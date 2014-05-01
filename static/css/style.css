@@ -123,6 +123,16 @@ ul.game-session li:hover {
     text-align: center;
 }
 
+.no-game-cover h1 {
+    text-align: left;
+    font-size: 24px;
+}
+
+.no-game-cover p {
+    text-align: left;
+    font-size: 12px;
+}
+
 .game-controls {
     position: fixed;
     padding: 8px;

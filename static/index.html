@@ -39,7 +39,39 @@
           </ul>
         </div>
         <div class="hand">
-          <div class="no-game-cover" ng-show="game == undefined"><div>Select Game</div></div>
+          <div class="no-game-cover" ng-show="game == undefined">
+            <div>Select a Game</div>
+
+<h1>Cards Against Humanity Rules (Taken straight from the Cards Against Humanity website)</h1>
+<p>To start the game, each player draws 10 white cards.</p>
+
+<p>One randomly chosen player begins as the card czar and plays a black card. The card czar reads the question or fill in the blank phrase on the black card out loud.</p>
+
+<p>Everyone else answers the question refills in the blank bypassing one white card, face down, to the card czar.</p>
+
+<p>The card czar shuffles all the answers and shares each card combination with the group. For full effect the card czar should usually reread the black card before presenting each answer. The card czar then picks a favorite, and whoever played the answer keeps a black card as one awesome point.</p>
+
+<p>After the round, a new player becomes a card czar, and everyone draws back up to 10 white cards.</p>
+
+<h1>Creating a new player</h1>
+<p>To create a new player click on the gear icon in the left sidebar. This brings up a dialog where you can create your player name. Once you click on the new player button your player is created and saved on your computer and on the server. This is the player you will play as in any game on that web browser.</p>
+
+<h1>Creating a game</h1>
+<p>To create a game click on the plus button in the left sidebar. This brings up a dialog where you can name the game and select up to 6 AI players to play in the game. Finally click the new game button and the game will be created.</p>
+
+<h1>Joining a game</h1>
+<p>Click on the game you wish to join in the left sidebar. You are instantly added into the game.</p>
+
+<h1>Ending a game</h1>
+<p>The first person to join a game is also in charge of ending that game. To end a game click on the red End Game button at the top of the screen. This will close out the game and remove all players from it.</p>
+
+<h1>Playing cards</h1>
+<p>To play a card click on the card(s) you wish to play for the given black card and then click submit. Once all players have played their cards you will see what everyone played for that black card.</p>
+
+<h1>Judging cards</h1>
+<p>If you are the judge(card czar) you may select the winning card by clicking on your favorite submission and then clicking on submit. This will update player scores accordingly and kick off a new round.</p>
+
+          </div>
           <div class="game-controls" ng-show="game">
             <button class="btn btn-success" ng-click="submitSelection()" ng-show="!isGameJudge()">Submit</button>
             <button class="btn btn-primary" ng-click="judgeCard()" ng-show="isGameJudge()">Choose Winner</button>
